@@ -388,6 +388,12 @@ class MapboxBasicRenderer extends Evented {
             }
 
             state.tiles.forEach(t => t.tileID.posMatrix = this._calculatePosMatrix(t.left-xx, t.top-yy, t.tileSize));
+
+            // update zoom level
+            // only one tile will be supply to renderTiles function
+            // so we use the first tile's zoom level
+            this._style.update(new EvaluationParameters(tilesSpec[0].z));
+
             this.painter.render(this._style, {showTileBoundaries: false, showOverdrawInspector: false});
 
             relevantConsumers.forEach(c => {
