@@ -9,7 +9,8 @@ import {queryRenderedFeatures} from "../source/query_features";
 import EvaluationParameters from "../style/evaluation_parameters";
 import { Placement } from "../symbol/placement";
 import assert from "assert";
-import {preprocessStyle} from "./style";
+import { preprocessStyle } from "./style";
+import isSupported from "@mapbox/mapbox-gl-supported"
 
 const DEFAULT_RESOLUTION = 256;
 const OFFSCREEN_CANV_SIZE = 1024;
@@ -132,7 +133,7 @@ class BasicRenderer extends Evented {
         failIfMajorPerformanceCaveat: false,
         preserveDrawingBuffer: false,
       },
-      require("mapbox-gl-supported").webGLContextAttributes
+      isSupported.webGLContextAttributes
     );
 
     this._gl =

@@ -52,7 +52,7 @@ class BasicStyle extends Style {
           source_.on("data", (e) => e.dataType === "source" && res())
         )
     );
-    this.sourceCaches[id] = new SourceCache(id, source, null);
+    this.sourceCaches[id] = new SourceCache(id, source, this.dispatcher);
   }
 
   // setLayers, and all other methods on the super, e.g. setPaintProperty, should be called
