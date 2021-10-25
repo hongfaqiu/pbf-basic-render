@@ -1,9 +1,11 @@
-const Painter = require('../render/painter');
+import Painter from "../render/painter";
 
-var layerStylesheetFromLayer = layer => layer && layer._eventedParent.stylesheet.layers.find(x=>x.id===layer.id);
+var layerStylesheetFromLayer = (layer) =>
+  layer &&
+  layer._eventedParent.stylesheet.layers.find((x) => x.id === layer.id);
 
 class BasicPainter extends Painter {
-  constructor(gl, transform){
+  constructor(gl, transform) {
     super(gl, transform);
     this._filterForZoom = 15;
   }
@@ -15,10 +17,20 @@ class BasicPainter extends Painter {
   }
   renderLayer(painter, sourceCache, layer, coords) {
     let layerStylesheet = layerStylesheetFromLayer(layer);
-    if (layerStylesheet && layerStylesheet.minzoom_ && coords[0].overscaledZ < layerStylesheet.minzoom_) return;
-    if (layerStylesheet && layerStylesheet.maxzoom_ && coords[0].overscaledZ >= layerStylesheet.maxzoom_) return;
+    if (
+      layerStylesheet &&
+      layerStylesheet.minzoom_ &&
+      coords[0].overscaledZ < layerStylesheet.minzoom_
+    )
+      return;
+    if (
+      layerStylesheet &&
+      layerStylesheet.maxzoom_ &&
+      coords[0].overscaledZ >= layerStylesheet.maxzoom_
+    )
+      return;
     super.renderLayer(painter, sourceCache, layer, coords);
   }
-};
+}
 
-module.exports = BasicPainter;
+export default BasicPainter;
