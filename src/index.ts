@@ -25,19 +25,19 @@ import {clearTileCache} from './util/tile_request_cache';
 import {PerformanceUtils} from './util/performance';
 import type {RequestParameters, ResponseCallback} from './util/ajax';
 import type { Cancelable } from './types/cancelable';
-import BasicRenderer from './basic/renderer';
+import {Painter} from './render/painter';
 
 const exported = {
     supported,
     setRTLTextPlugin,
     getRTLTextPluginStatus,
-    BasicRenderer,
     Map,
     NavigationControl,
     GeolocateControl,
     AttributionControl,
     ScaleControl,
     FullscreenControl,
+    Painter,
     Popup,
     Marker,
     Style,

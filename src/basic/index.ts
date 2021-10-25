@@ -249,7 +249,7 @@ class BasicRenderer extends Evented {
   getVisibleSources(zoom) {
     // list of sources with style layers that are visible, optionaly using the zoom to refine the visibility
     return Object.keys(this._style.sourceCaches).filter(
-      (s) => this.getLayersVisible(this.painter._filterForZoom, s).length > 0
+      (s) => true //this.getLayersVisible(this.painter._filterForZoom, s).length > 0
     );
   }
 
@@ -350,6 +350,7 @@ class BasicRenderer extends Evented {
   }
 
   renderTiles(ctx, drawSpec, tilesSpec, next) {
+    console.log("renderTiles");
     // drawSpec has {destLeft,destTop,srcLeft,srcTop,width,height}
     // tilesSpec is an array of: {sourceName,z,x,y,left,top,size}
     // The tilesSpec defines how a selection of source tiles are rendered to an
@@ -380,6 +381,8 @@ class BasicRenderer extends Evented {
       };
     }
 
+    console.log(ctx, drawSpec, tilesSpec);
+
     // Ok, well we need to create a new pending render (which may include creating & loading new tiles)...
     let renderId = ++this._nextRenderId;
     state = {
@@ -392,6 +395,7 @@ class BasicRenderer extends Evented {
       consumers: [consumer],
     };
     this._pendingRenders.set(tileSetID, state);
+
 
     // once all the tiles are loaded we can then execute the pending render...
     let badTileIdxs = [];
