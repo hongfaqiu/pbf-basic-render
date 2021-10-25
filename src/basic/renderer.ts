@@ -1,14 +1,14 @@
 import BasicPainter from "./painter";
 import BasicStyle from "./style";
 import EXTENT from "../data/extent";
-import Evented from "../util/evented";
+import { Evented } from "../util/evented";
 import { OverscaledTileID } from "../source/tile_id";
-import { mat4 } from "@mapbox/gl-matrix";
-import Source from "../source/source";
-import QueryFeatures from "../source/query_features";
+import { mat4 } from "gl-matrix";
+import { Source } from "../source/source";
+import {queryRenderedFeatures} from "../source/query_features";
 import EvaluationParameters from "../style/evaluation_parameters";
-import Placement from "../symbol/placement";
-import assert from "../util/assert";
+import { Placement } from "../symbol/placement";
+import assert from "assert";
 import {preprocessStyle} from "./style";
 
 const DEFAULT_RESOLUTION = 256;
@@ -27,7 +27,7 @@ class BasicRenderer extends Evented {
   _tmpMat4f64b: Float32Array;
   _tmpMat4f64: Float64Array;
   _tmpMat4f32: Float32Array;
-  _gl: WebGLRenderingContext;
+  _gl: RenderingContext;
 
   constructor(options) {
     super();
@@ -112,6 +112,7 @@ class BasicRenderer extends Evented {
     this._tmpMat4f32 = new Float32Array(16); // TODO(optimization): may want to use a pool for this rather than a new one each time
 
     // The main calculation...
+    // @ts-ignore
     mat4.identity(this._tmpMat4f64);
     let factor = tileSize / OFFSCREEN_CANV_SIZE;
     scale(this._tmpMat4f64, [(2 / EXTENT) * factor, (-2 / EXTENT) * factor, 1]);
@@ -194,6 +195,7 @@ class BasicRenderer extends Evented {
         this._queuedConfigChanges.shift()();
       }
       this._style.update(new EvaluationParameters(16));
+      // @ts-ignore
       this.fire("configChanged");
       return true;
     });
@@ -265,7 +267,7 @@ class BasicRenderer extends Evented {
       this._finishRender(s.tileSetID, s.renderId, "canceled")
     );
     this._pendingRenders.clear();
-    Object.values(this._style.sourceCaches).forEach((s) =>
+    Object.values(this._style.sourceCaches).forEach((s: any) =>
       s.invalidateAllLoadedTiles()
     );
   }
@@ -383,7 +385,7 @@ class BasicRenderer extends Evented {
       tileSetID,
       renderId,
       tiles: tilesSpec.map((s) => {
-        let tileID = new OverscaledTileID(s.z, 0, s.z, s.x, s.y, 0);
+        let tileID = new OverscaledTileID(s.z, 0, s.z, s.x, s.y);
         return this._style.sourceCaches[s.source].acquireTile(tileID, s.size); // includes .uses++
       }),
       consumers: [consumer],
@@ -424,7 +426,7 @@ class BasicRenderer extends Evented {
 
         // setup the list of currentlyRenderingTiles for each source
         Object.values(this._style.sourceCaches).forEach(
-          (c) => (c.currentlyRenderingTiles = [])
+          (c: any) => (c.currentlyRenderingTiles = [])
         );
         tilesSpec.forEach((s, ii) => {
           if (badTileIdxs.includes(ii)) {
@@ -482,9 +484,11 @@ class BasicRenderer extends Evented {
             // so we use the first tile's zoom level
             this._style.update(new EvaluationParameters(tilesSpec[0].z));
 
+            // @ts-ignore
             this.painter.render(this._style, {
               showTileBoundaries: false,
               showOverdrawInspector: false,
+              showPadding: false,
             });
 
             relevantConsumers.forEach((c) => {
@@ -528,7 +532,7 @@ class BasicRenderer extends Evented {
         }
         this._pendingRenders.delete(tileSetID);
         Object.values(this._style.sourceCaches).forEach(
-          (c) => (c.currentlyRenderingTiles = [])
+          (c: any) => (c.currentlyRenderingTiles = [])
         );
       });
 
@@ -548,12 +552,14 @@ class BasicRenderer extends Evented {
       (lyr) => (layers[lyr] = this._style._layers[lyr])
     );
 
-    let featuresByRenderLayer = QueryFeatures.rendered(
+    // needs reworking
+    let featuresByRenderLayer = queryRenderedFeatures(
       this._style.sourceCaches[opts.source],
       layers,
       opts,
-      {},
+      [],
       opts.tileZ,
+      // @ts-ignore
       0
     );
 
@@ -581,7 +587,7 @@ class BasicRenderer extends Evented {
     this._canvas.style.transform = "scale(0.5) translate(502px,502px)";
   }
   destroyDebugCanvas() {
-    renderer._canvas.parentElement && document.body.removeChild(this._canvas);
+    this._canvas.parentElement && document.body.removeChild(this._canvas);
   }
 }
 

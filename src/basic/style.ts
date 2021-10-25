@@ -1,7 +1,7 @@
 import Style from "../style/style";
-import Source from "../source/source";
-import Placement from "../symbol/placement";
-import BasicSourceCache from "./source_cache";
+import { create } from "../source/source";
+import { Placement } from "../symbol/placement";
+import SourceCache from "../source/source_cache";
 
 export function preprocessStyle(style) {
   if (typeof style !== "object") return;
@@ -35,16 +35,16 @@ class BasicStyle extends Style {
       this.on("data", (e) => e.dataType === "style" && res())
     );
     this.loadedPromise.then(
-      () => (this.placement = new Placement(map.transform, 0))
+      () => (this.placement = new Placement(map.transform, 0, true))
     );
     this.loadJSON(stylesheet);
   }
 
   addSource(id, source, options) {
-    let source_ = Source.create(id, source, this.dispatcher, this);
+    let source_ = create(id, source, this.dispatcher, this);
     source_.setEventedParent(this, { source: source_ });
     source_.map = this.map;
-    source_.tiles = source.tiles;
+    //source_.tiles = source.tiles;
     source_.load();
     this.loadedPromise.then(
       () =>
@@ -52,7 +52,7 @@ class BasicStyle extends Style {
           source_.on("data", (e) => e.dataType === "source" && res())
         )
     );
-    this.sourceCaches[id] = new BasicSourceCache(source_);
+    this.sourceCaches[id] = new SourceCache(id, source, null);
   }
 
   // setLayers, and all other methods on the super, e.g. setPaintProperty, should be called

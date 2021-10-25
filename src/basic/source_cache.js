@@ -1,7 +1,7 @@
 import Cache from "../util/lru_cache";
 import assert from "assert";
 import Tile from "../source/tile";
-import Point from "point-geometry";
+import Point from "@mapbox/point-geometry";
 import EXTENT from "../data/extent";
 import SphericalMercator from "@mapbox/sphericalmercator";
 
