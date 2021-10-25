@@ -15,6 +15,20 @@ const DEFAULT_RESOLUTION = 256;
 const OFFSCREEN_CANV_SIZE = 1024;
 
 class MapboxBasicRenderer extends Evented {
+  _canvas: HTMLCanvasElement;
+  transform: object;
+  _initStyle: any;
+  _style: BasicStyle;
+  painter: BasicPainter;
+  _pendingRenders: Map<any, any>;
+  _nextRenderId: number;
+  _configId: number;
+  _queuedConfigChanges: Array<any>;
+  _tmpMat4f64b: Float32Array;
+  _tmpMat4f64: Float64Array;
+  _tmpMat4f32: Float32Array;
+  _gl: WebGLRenderingContext;
+
   constructor(options) {
     super();
     this._canvas = document.createElement("canvas");

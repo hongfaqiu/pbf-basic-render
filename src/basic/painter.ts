@@ -5,6 +5,7 @@ var layerStylesheetFromLayer = (layer) =>
   layer._eventedParent.stylesheet.layers.find((x) => x.id === layer.id);
 
 class BasicPainter extends Painter {
+  _filterForZoom: number;
   constructor(gl, transform) {
     super(gl, transform);
     this._filterForZoom = 15;

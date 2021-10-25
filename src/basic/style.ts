@@ -27,7 +27,9 @@ export function preprocessStyle(style) {
 
 
 class BasicStyle extends Style {
-  constructor(stylesheet, map, options) {
+  loadedPromise: Promise<void>;
+  sourceCaches: any;
+  constructor(stylesheet: any, map: any, options: any = {}) {
     super(map, options);
     this.loadedPromise = new Promise((res) =>
       this.on("data", (e) => e.dataType === "style" && res())
@@ -46,7 +48,7 @@ class BasicStyle extends Style {
     source_.load();
     this.loadedPromise.then(
       () =>
-        new Promise((res) =>
+        new Promise<void>((res) =>
           source_.on("data", (e) => e.dataType === "source" && res())
         )
     );
