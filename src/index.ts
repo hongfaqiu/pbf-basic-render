@@ -24,12 +24,14 @@ import {prewarm, clearPrewarmedResources} from './util/global_worker_pool';
 import {clearTileCache} from './util/tile_request_cache';
 import {PerformanceUtils} from './util/performance';
 import type {RequestParameters, ResponseCallback} from './util/ajax';
-import type {Cancelable} from './types/cancelable';
+import type { Cancelable } from './types/cancelable';
+import BasicRenderer from './basic/renderer';
 
 const exported = {
     supported,
     setRTLTextPlugin,
     getRTLTextPluginStatus,
+    BasicRenderer,
     Map,
     NavigationControl,
     GeolocateControl,

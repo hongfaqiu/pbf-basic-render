@@ -14,7 +14,7 @@ import {preprocessStyle} from "./style";
 const DEFAULT_RESOLUTION = 256;
 const OFFSCREEN_CANV_SIZE = 1024;
 
-class MapboxBasicRenderer extends Evented {
+class BasicRenderer extends Evented {
   _canvas: HTMLCanvasElement;
   transform: object;
   _initStyle: any;
@@ -585,4 +585,4 @@ class MapboxBasicRenderer extends Evented {
   }
 }
 
-export default MapboxBasicRenderer;
+export default BasicRenderer;
