@@ -3,6 +3,29 @@ import Source from "../source/source";
 import Placement from "../symbol/placement";
 import BasicSourceCache from "./source_cache";
 
+export function preprocessStyle(style) {
+  if (typeof style !== "object") return;
+  if (!Array.isArray(style.layers)) return;
+
+  // minzoom/maxzoom to minzoom_/maxzoom_
+  style.layers.forEach((layer) => {
+    if (typeof layer.minzoom === "number") {
+      layer.minzoom_ = layer.minzoom;
+      delete layer.minzoom;
+    }
+    if (typeof layer.maxzoom === "number") {
+      layer.maxzoom_ = layer.maxzoom;
+      delete layer.maxzoom;
+    }
+  });
+
+  // delete raster layer
+  style.layers = style.layers.filter((l) => {
+    return l.type !== "raster" && l.type !== "background";
+  });
+}
+
+
 class BasicStyle extends Style {
   constructor(stylesheet, map, options) {
     super(map, options);

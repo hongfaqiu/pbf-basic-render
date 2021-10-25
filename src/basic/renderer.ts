@@ -9,7 +9,7 @@ import QueryFeatures from "../source/query_features";
 import EvaluationParameters from "../style/evaluation_parameters";
 import Placement from "../symbol/placement";
 import assert from "../util/assert";
-import stylePreprocess from "./style_preprocess";
+import {preprocessStyle} from "./style";
 
 const DEFAULT_RESOLUTION = 256;
 const OFFSCREEN_CANV_SIZE = 1024;
@@ -46,7 +46,7 @@ class MapboxBasicRenderer extends Evented {
       tileZoom: (tile) => tile.tileID.canonical.z,
       calculatePosMatrix: (tileID) => tileID.posMatrix,
     };
-    stylePreprocess(options.style);
+    preprocessStyle(options.style);
     this._initStyle = options.style;
     this._style = new BasicStyle(
       Object.assign({}, options.style, { transition: { duration: 0 } }),
