@@ -553,6 +553,11 @@ class Style extends Evented {
         return this.imageManager.listImages();
     }
 
+    _createSourceCache(id: string, source: SourceSpecification) {
+        /** Create a cache for a given source */
+        return new SourceCache(id, source, this.dispatcher)
+    }
+
     addSource(id: string, source: SourceSpecification, options: StyleSetterOptions = {}) {
         this._checkLoaded();
 
@@ -569,7 +574,7 @@ class Style extends Evented {
         if (shouldValidate && this._validate(validateStyle.source, `sources.${id}`, source, null, options)) return;
 
         if (this.map && this.map._collectResourceTiming) (source as any).collectResourceTiming = true;
-        const sourceCache = this.sourceCaches[id] = new SourceCache(id, source, this.dispatcher);
+        const sourceCache = this.sourceCaches[id] = this._createSourceCache(id, source);
         sourceCache.style = this;
         sourceCache.setEventedParent(this, () => ({
             isSourceLoaded: this.loaded(),
