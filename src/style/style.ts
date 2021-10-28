@@ -553,6 +553,11 @@ class Style extends Evented {
         return this.imageManager.listImages();
     }
 
+    _createSourceCache(id: string, source: SourceSpecification) {
+        /** Create a cache for a given source */
+        return new SourceCache(id, source, this.dispatcher)
+    }
+
     addSource(id: string, source: SourceSpecification, options: StyleSetterOptions = {}) {
         this._checkLoaded();
 
@@ -564,12 +569,12 @@ class Style extends Evented {
             throw new Error(`The type property must be defined, but only the following properties were given: ${Object.keys(source).join(', ')}.`);
         }
 
-        const builtIns = ['vector', 'raster', 'geojson', 'video', 'image'];
+        const builtIns = ['vector', d 'raster', 'geojson', 'video', 'image'];
         const shouldValidate = builtIns.indexOf(source.type) >= 0;
         if (shouldValidate && this._validate(validateStyle.source, `sources.${id}`, source, null, options)) return;
 
         if (this.map && this.map._collectResourceTiming) (source as any).collectResourceTiming = true;
-        const sourceCache = this.sourceCaches[id] = new SourceCache(id, source, this.dispatcher);
+        const sourceCache = this.sourceCaches[id] = this._createSourceCache(id, source);
         sourceCache.style = this;
         sourceCache.setEventedParent(this, () => ({
             isSourceLoaded: this.loaded(),
