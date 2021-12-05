@@ -25,7 +25,7 @@ import {clearTileCache} from './util/tile_request_cache';
 import {PerformanceUtils} from './util/performance';
 import type {RequestParameters, ResponseCallback} from './util/ajax';
 import type { Cancelable } from './types/cancelable';
-import Painter from './render/painter';
+import BasicRenderer from './basic_renderer';
 
 const exported = {
     supported,
@@ -37,7 +37,7 @@ const exported = {
     AttributionControl,
     ScaleControl,
     FullscreenControl,
-    Painter,
+    BasicRenderer,
     Popup,
     Marker,
     Style,
