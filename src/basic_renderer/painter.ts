@@ -6,6 +6,10 @@ var layerStylesheetFromLayer = (layer) =>
 
 class BasicPainter extends Painter {
   _filterForZoom: number;
+  style: any;
+  width: number;
+  height: number;
+  context: any;
   constructor(gl, transform) {
     super(gl, transform);
     this._filterForZoom = 15;

@@ -1,16 +1,16 @@
 import BasicPainter from "./painter";
-import BasicStyle from "./style";
 import EXTENT from "../data/extent";
 import { Evented } from "../util/evented";
 import { OverscaledTileID } from "../source/tile_id";
 import { mat4 } from "gl-matrix";
 import { Source } from "../source/source";
-import {queryRenderedFeatures} from "../source/query_features";
+import { queryRenderedFeatures } from "../source/query_features";
 import EvaluationParameters from "../style/evaluation_parameters";
 import { Placement } from "../symbol/placement";
 import assert from "assert";
-import { preprocessStyle } from "./style";
-import isSupported from "@mapbox/mapbox-gl-supported"
+import BasicStyle, { preprocessStyle } from "./style";
+import isSupported from "@mapbox/mapbox-gl-supported";
+import { RequestManager } from "../util/request_manager";
 
 const DEFAULT_RESOLUTION = 256;
 const OFFSCREEN_CANV_SIZE = 1024;
@@ -29,9 +29,11 @@ class BasicRenderer extends Evented {
   _tmpMat4f64: Float64Array;
   _tmpMat4f32: Float32Array;
   _gl: RenderingContext;
+  _requestManager: RequestManager;
 
   constructor(options) {
     super();
+    this._requestManager = new RequestManager(options.transformRequest);
     this._canvas = document.createElement("canvas");
     this._canvas.style.imageRendering = "pixelated";
     this._canvas.addEventListener(
@@ -63,12 +65,14 @@ class BasicRenderer extends Evented {
     };
     preprocessStyle(options.style);
     this._initStyle = options.style;
-    this._style = new BasicStyle(
-      Object.assign({}, options.style, { transition: { duration: 0 } }),
-      this
-    );
+    // transition: { duration: 0 }
+    const s1 = Object.assign({}, options.style, {});
+    console.log(s1);
+    this._style = new BasicStyle(s1, this);
+    console.log(this._style);
+
     this._style.setEventedParent(this, { style: this._style });
-    this._style.on("data", (e) => e.dataType === "style" && this._onReady());
+    this._style.on("style.load", (e) => this._onReady());
     this._createGlContext();
     this.painter.resize(OFFSCREEN_CANV_SIZE, OFFSCREEN_CANV_SIZE);
     this._pendingRenders = new Map(); // tileSetID => render state
@@ -78,6 +82,11 @@ class BasicRenderer extends Evented {
   }
 
   _onReady() {
+    // for (const layer of Object.values(this._style._layers)) {
+    //   layer._transitionablePaint = new Transitionable(layer.properties.paint);
+    //   layer._transitioningPaint = layer._transitionablePaint.untransitioned();
+    // }
+    console.log("Began updating styles");
     this._style.update(new EvaluationParameters(16));
   }
 
@@ -96,6 +105,10 @@ class BasicRenderer extends Evented {
       The translate/scale functions here could probably be ditched in favour of
       the mat4 versions, but I found it easier to do the multiplies myself.
     */
+        //     this.pixelsToGLUnits = [2 / width, -2 / height];
+        // this._constrain();
+        // this._calcMatrices();
+    
     var translate = (a, v) => {
       this._tmpMat4f64b = this._tmpMat4f64b || new Float32Array(16);
       mat4.identity(this._tmpMat4f64b);
@@ -211,6 +224,10 @@ class BasicRenderer extends Evented {
       layer &&
       layer._eventedParent.stylesheet.layers.find((x) => x.id === layer.id);
 
+    return Object.keys(this._style._layers);
+
+    // Get rid of filtering for now
+    /*
     return Object.keys(this._style._layers)
       .filter(
         (lyr) => this._style.getLayoutProperty(lyr, "visibility") === "visible"
@@ -229,6 +246,7 @@ class BasicRenderer extends Evented {
           (!source || (layerStylesheet && layerStylesheet.source === source))
         );
       });
+    */
   }
 
   getLayerOriginalFilter(layerName) {
@@ -249,7 +267,7 @@ class BasicRenderer extends Evented {
   getVisibleSources(zoom) {
     // list of sources with style layers that are visible, optionaly using the zoom to refine the visibility
     return Object.keys(this._style.sourceCaches).filter(
-      (s) => true //this.getLayersVisible(this.painter._filterForZoom, s).length > 0
+      (s) => this.getLayersVisible(this.painter._filterForZoom, s).length > 0
     );
   }
 
@@ -292,6 +310,7 @@ class BasicRenderer extends Evented {
     // we define the origin as the minimum left and top values mentioned in tileSpec/drawSpec
     // and adjust all the top/left values to use this reference.  This cannonicalization means
     // we can spot tile sets that are the same except for a gobal translation.
+    console.log(tilesSpec, drawSpec);
 
     let minLeft = tilesSpec
       .map((s) => s.left)
@@ -350,7 +369,6 @@ class BasicRenderer extends Evented {
   }
 
   renderTiles(ctx, drawSpec, tilesSpec, next) {
-    console.log("renderTiles");
     // drawSpec has {destLeft,destTop,srcLeft,srcTop,width,height}
     // tilesSpec is an array of: {sourceName,z,x,y,left,top,size}
     // The tilesSpec defines how a selection of source tiles are rendered to an
@@ -364,7 +382,10 @@ class BasicRenderer extends Evented {
     // tilesSpec when appropriate. We don't re-do that filtering work here.
 
     // any requests that have the same tileSetID can be coallesced into a single _pendingRender
+
     ({ drawSpec, tilesSpec } = this._canonicalizeSpec(tilesSpec, drawSpec));
+    console.log("renderTiles", drawSpec, tilesSpec);
+
     let tileSetID = this._tileSpecToString(tilesSpec);
     let consumer = { ctx, drawSpec, tilesSpec, next };
 
@@ -381,8 +402,6 @@ class BasicRenderer extends Evented {
       };
     }
 
-    console.log(ctx, drawSpec, tilesSpec);
-
     // Ok, well we need to create a new pending render (which may include creating & loading new tiles)...
     let renderId = ++this._nextRenderId;
     state = {
@@ -396,16 +415,22 @@ class BasicRenderer extends Evented {
     };
     this._pendingRenders.set(tileSetID, state);
 
-
     // once all the tiles are loaded we can then execute the pending render...
     let badTileIdxs = [];
     Promise.all(
       state.tiles.map((t, ii) =>
-        t.loadedPromise.catch((err) => badTileIdxs.push(ii))
+        t.loadedPromise.catch((err) => {
+          console.log("Found bad tile", t, err);
+          badTileIdxs.push(ii);
+        })
       )
     )
-      .catch((err) => this._finishRender(tileSetID, renderId, err)) // will delete the pendingRender so the next promise's initial check will fail
+      .catch((err) => {
+        console.log("Caught error!");
+        this._finishRender(tileSetID, renderId, err); // will delete the pendingRender so the next promise's initial check will fail
+      })
       .then(() => {
+        console.log("Handler");
         state = this._pendingRenders.get(tileSetID);
         if (!state || state.renderId !== renderId) {
           return; // render for this tileGroupID has been canceled, or superceded.
@@ -413,6 +438,9 @@ class BasicRenderer extends Evented {
         let err = badTileIdxs.length
           ? `${badTileIdxs.length} of ${tilesSpec.length} tiles not available`
           : null;
+
+        console.log("Starting to render tiles");
+        console.log(tilesSpec, badTileIdxs);
 
         // special case the condition where there are no tiles requested/available
         if (tilesSpec.length - badTileIdxs.length === 0) {
@@ -426,6 +454,7 @@ class BasicRenderer extends Evented {
             )
           );
           this._finishRender(tileSetID, renderId, err);
+          console.log("No tiles to render");
           return;
         }
 
@@ -458,6 +487,8 @@ class BasicRenderer extends Evented {
           .map((c) => c.drawSpec.srcTop + c.drawSpec.height)
           .reduce((a, b) => Math.max(a, b), -Infinity);
 
+        console.log("Still going");
+
         // iterate over OFFSCREEN_CANV_SIZE x OFFSCREEN_CANV_SIZE blocks of that bounding box
         for (let xx = xSrcMin; xx < xSrcMax; xx += OFFSCREEN_CANV_SIZE) {
           for (let yy = ySrcMin; yy < ySrcMax; yy += OFFSCREEN_CANV_SIZE) {
@@ -471,6 +502,8 @@ class BasicRenderer extends Evented {
                 c.drawSpec.srcTop + c.drawSpec.height > yy &&
                 c.drawSpec.srcTop < yy + OFFSCREEN_CANV_SIZE
             );
+
+            console.log(state.tiles);
             if (relevantConsumers.length === 0) {
               continue;
             }
@@ -489,12 +522,14 @@ class BasicRenderer extends Evented {
             // so we use the first tile's zoom level
             this._style.update(new EvaluationParameters(tilesSpec[0].z));
 
+            this.painter.transform.zoom = tilesSpec[0].z;
             // @ts-ignore
             this.painter.render(this._style, {
               showTileBoundaries: false,
               showOverdrawInspector: false,
               showPadding: false,
             });
+            //debugger;
 
             relevantConsumers.forEach((c) => {
               let srcLeft = Math.max(0, c.drawSpec.srcLeft - xx) | 0;

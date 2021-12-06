@@ -1,9 +1,14 @@
-import Cache from "../util/lru_cache";
+import Cache from "../source/tile_cache";
 import assert from "assert";
 import Tile from "../source/tile";
 import Point from "@mapbox/point-geometry";
 import EXTENT from "../data/extent";
 import SphericalMercator from "@mapbox/sphericalmercator";
+import type { SourceSpecification } from "../style-spec/types";
+import type Dispatcher from "../util/dispatcher";
+import { create as createSource } from "../source/source";
+import { Evented } from "../util/evented";
+//import SourceCache from "maplibre-gl-js/src/source/source_cache";
 
 let sphericalMercator = new SphericalMercator();
 
@@ -19,15 +24,33 @@ const TILE_LOAD_TIMEOUT = 60 * 1000;
     + currentlyRenderingTiles - a list of tiles that we actually want to be able to paint
 */
 
-class BasicSourceCache {
+interface ExtTile extends Tile {
+  cache: any;
+  loadedPromise: Promise<void>;
+  _isDud: boolean;
+}
+
+class BasicSourceCache extends Evented {
   _source;
   _tilesInUse = {}; // tileID.key => tile (note that tile's have a .uses counter)
   map = {};
   _tileCache;
   currentlyRenderingTiles;
+  _maxTileCacheSize: number;
+  dispatcher: any;
+  id: string;
 
-  constructor(source) {
-    this._source = source;
+  constructor(
+    id: string,
+    options: SourceSpecification,
+    dispatcher: Dispatcher
+  ) {
+    super();
+    this.id = id;
+    this.dispatcher = dispatcher;
+
+    this._source = createSource(id, options, dispatcher, this);
+
     this._tileCache = new Cache(TILE_CACHE_SIZE, (t) =>
       this._source.unloadTile(t)
     );
@@ -41,16 +64,21 @@ class BasicSourceCache {
   getRenderableIds() {
     return this.getVisibleCoordinates();
   }
-  acquireTile(tileID, size) {
+  acquireTile(tileID: any, size) {
     // important: every call to acquireTile should be paired with a call to releaseTile
     // you can also manually increment tile.uses, however do not decrement it directly, instead
     // call releaseTile.
-    let tile =
-      this._tilesInUse[tileID.key] ||
-      this._tileCache.getAndRemove(tileID.key) ||
-      new Tile(tileID.wrapped(), size, tileID.canonical.z);
+
+    console.log("acquireTile", tileID);
+
+    // let tile =
+    //   this._tilesInUse[tileID.key] ||
+    //   this._tileCache.getAndRemove(tileID.key) ||
+    // @ts-ignore
+    let tile = new Tile(tileID.wrapped(), size, tileID.canonical.z) as ExtTile;
     tile.uses++;
     this._tilesInUse[tileID.key] = tile;
+    console.log("Got tile", tile);
 
     tile.cache = this; // redundant if tile is not new
     if (tile.loadedPromise) {
@@ -66,8 +94,10 @@ class BasicSourceCache {
         rej("timeout");
       }, TILE_LOAD_TIMEOUT);
       this._source.loadTile(tile, (err) => {
+        console.log("loaded tile", tile);
         clearTimeout(timeout);
         if (err) {
+          console.error(err);
           tile._isDud = true; // we can consider it to "have data", i.e. we will let it go into the cache
           rej(err);
         } else {
@@ -97,9 +127,9 @@ class BasicSourceCache {
       return;
     }
     delete this._tilesInUse[tile.tileID.key];
-    if (tile.hasData() || this._isDud) {
+    if (tile.hasData() || tile._isDud) {
       // this tile is worth keeping...
-      this._tileCache.add(tile.tileID.key, tile);
+      this._tileCache.add(tile.tileID, tile);
     } else {
       // this tile isn't ready and isn't needed, so abandon it...
       this._source.abortTile(tile);
@@ -107,14 +137,24 @@ class BasicSourceCache {
     }
   }
 
+  loaded() {
+    if (!this._source.loaded()) {
+      return false;
+    }
+    if (Object.keys(this._tilesInUse).length > 0) {
+      return false;
+    }
+    return true;
+  }
+
   invalidateAllLoadedTiles() {
     // this needs to be called on all changes: style, layers visible, resolution (i.e. zoom)
     // by removing the loadedPromise, we force a fresh load next time the tile
     // is needed...although note that "fresh" is only partial because the rawData
     // is still available.
-    Object.values(this._tilesInUse).forEach(
-      (t) => !t._isDud && (t.loadedPromise = null)
-    );
+    Object.values(this._tilesInUse).forEach((t: ExtTile) => {
+      return !t._isDud && (t.loadedPromise = null);
+    });
     this._tileCache.keys().forEach((id) => {
       let tile = this._tileCache.get(id);
       !tile._isDud && (tile.loadedPromise = null);
@@ -132,8 +172,8 @@ class BasicSourceCache {
     let pointY = pointXY[1];
 
     return Object.values(this._tilesInUse)
-      .filter((t) => t.hasData()) // we are a bit lazy in terms of ensuring the data matches the rendered styles etc. ..could check loadedPromise has resolved
-      .map((t) => ({
+      .filter((t: ExtTile) => t.hasData()) // we are a bit lazy in terms of ensuring the data matches the rendered styles etc. ..could check loadedPromise has resolved
+      .map((t: ExtTile) => ({
         tile: t,
         tileID: t.tileID,
         queryGeometry: [
@@ -152,6 +192,14 @@ class BasicSourceCache {
   reload() {}
   pause() {}
   resume() {}
+  onAdd(map: Map<any, any>) {
+    this.map = map;
+    // @ts-ignore
+    this._maxTileCacheSize = map ? map._maxTileCacheSize : null;
+    if (this._source && this._source.onAdd) {
+      this._source.onAdd(map);
+    }
+  }
 }
 
 export default BasicSourceCache;

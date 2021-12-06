@@ -1,7 +1,8 @@
 import Style from "../style/style";
 import { create } from "../source/source";
 import { Placement } from "../symbol/placement";
-import SourceCache from "../source/source_cache";
+import { validateStyle } from "../style/validate_style";
+import SourceCache from "./source_cache";
 
 export function preprocessStyle(style) {
   if (typeof style !== "object") return;
@@ -25,36 +26,25 @@ export function preprocessStyle(style) {
   });
 }
 
-
 class BasicStyle extends Style {
   loadedPromise: Promise<void>;
-  sourceCaches: any;
+  sourceCaches: any = {};
   constructor(stylesheet: any, map: any, options: any = {}) {
     super(map, options);
+
     this.loadedPromise = new Promise((res) =>
-      this.on("data", (e) => e.dataType === "style" && res())
+      this.on("style.load", (e) => res())
     );
-    this.loadedPromise.then(
-      () => (this.placement = new Placement(map.transform, 0, true))
-    );
+    this.loadedPromise.then(() => {
+      this.placement = new Placement(map.transform, 0, true);
+    });
     this.loadJSON(stylesheet);
   }
 
-  addSource(id, source, options) {
-    let source_ = create(id, source, this.dispatcher, this);
-    source_.setEventedParent(this, { source: source_ });
-    source_.map = this.map;
-    //source_.tiles = source.tiles;
-    source_.load();
-    this.loadedPromise.then(
-      () =>
-        new Promise<void>((res) =>
-          source_.on("data", (e) => e.dataType === "source" && res())
-        )
-    );
-    this.sourceCaches[id] = new SourceCache(id, source, this.dispatcher);
+  // @ts-ignore
+  _createSourceCache(id, source) {
+    return new SourceCache(id, source, this.dispatcher);
   }
-
   // setLayers, and all other methods on the super, e.g. setPaintProperty, should be called
   // via loadedPromise.then, not synchrounsouly
 
