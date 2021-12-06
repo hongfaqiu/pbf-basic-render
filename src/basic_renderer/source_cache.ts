@@ -129,7 +129,7 @@ class BasicSourceCache extends Evented {
     delete this._tilesInUse[tile.tileID.key];
     if (tile.hasData() || tile._isDud) {
       // this tile is worth keeping...
-      this._tileCache.add(tile.tileID.key, tile);
+      this._tileCache.add(tile.tileID, tile);
     } else {
       // this tile isn't ready and isn't needed, so abandon it...
       this._source.abortTile(tile);

@@ -105,6 +105,10 @@ class BasicRenderer extends Evented {
       The translate/scale functions here could probably be ditched in favour of
       the mat4 versions, but I found it easier to do the multiplies myself.
     */
+        //     this.pixelsToGLUnits = [2 / width, -2 / height];
+        // this._constrain();
+        // this._calcMatrices();
+    
     var translate = (a, v) => {
       this._tmpMat4f64b = this._tmpMat4f64b || new Float32Array(16);
       mat4.identity(this._tmpMat4f64b);
@@ -405,14 +409,12 @@ class BasicRenderer extends Evented {
       renderId,
       tiles: tilesSpec.map((s) => {
         let tileID = new OverscaledTileID(s.z, 0, s.z, s.x, s.y);
-        console.log("creating tile", tileID);
         return this._style.sourceCaches[s.source].acquireTile(tileID, s.size); // includes .uses++
       }),
       consumers: [consumer],
     };
     this._pendingRenders.set(tileSetID, state);
 
-    console.log("Execute pending render");
     // once all the tiles are loaded we can then execute the pending render...
     let badTileIdxs = [];
     Promise.all(
@@ -520,13 +522,14 @@ class BasicRenderer extends Evented {
             // so we use the first tile's zoom level
             this._style.update(new EvaluationParameters(tilesSpec[0].z));
 
-            console.log("Prepping to render");
+            this.painter.transform.zoom = tilesSpec[0].z;
             // @ts-ignore
             this.painter.render(this._style, {
               showTileBoundaries: false,
               showOverdrawInspector: false,
               showPadding: false,
             });
+            //debugger;
 
             relevantConsumers.forEach((c) => {
               let srcLeft = Math.max(0, c.drawSpec.srcLeft - xx) | 0;
