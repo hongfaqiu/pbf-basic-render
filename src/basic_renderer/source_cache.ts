@@ -78,7 +78,6 @@ class BasicSourceCache extends Evented {
     let tile = new Tile(tileID.wrapped(), size, tileID.canonical.z) as ExtTile;
     tile.uses++;
     this._tilesInUse[tileID.key] = tile;
-    console.log("Got tile", tile);
 
     tile.cache = this; // redundant if tile is not new
     if (tile.loadedPromise) {
