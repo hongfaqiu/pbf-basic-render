@@ -177,7 +177,7 @@
     "build-tsc": "tsc && npm run build-glsl",
     "build-tsc-min": "tsc && npm run build-glsl-min",
     "build-dev": "npm run build-tsc && rollup -c --environment BUILD:dev",
-    "watch-dev": "npm run build-tsc && rollup -c --environment BUILD:dev --watch",
+    "watch-dev": "tsc --watch & rollup -c --environment BUILD:dev --watch",
     "build-prod": "npm run build-tsc && rollup -c --environment BUILD:production",
     "build-prod-min": "npm run build-tsc-min && rollup -c --environment BUILD:production,MINIFY:true",
     "build-csp": "rollup -c rollup.config.csp.js",
