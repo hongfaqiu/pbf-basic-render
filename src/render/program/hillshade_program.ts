@@ -17,7 +17,7 @@ import type Tile from '../../source/tile';
 import type Painter from '../painter';
 import type HillshadeStyleLayer from '../../style/style_layer/hillshade_style_layer';
 import type DEMData from '../../data/dem_data';
-import type {OverscaledTileID} from '../../source/tile_id';
+import {OverscaledTileID} from '../../source/tile_id';
 
 export type HillshadeUniformsType = {
   'u_matrix': UniformMatrix4f;
@@ -66,10 +66,16 @@ const hillshadeUniformValues = (painter: Painter, tile: Tile, layer: HillshadeSt
         azimuthal -= painter.transform.angle;
     }
     const align = !painter.options.moving;
+    let transform = painter.transform.identityPosMatrix(tile.tileID.toUnwrapped(), align)
+
+    const tileID = new OverscaledTileID(0, 0, 0, 0, 0);
+    //transform = painter.transform.calculatePosMatrix(tileID.toUnwrapped(), align)
+    //mat4.scale(transform, transform, [0.5, 0.5, 1]);
+
     return {
-        'u_matrix': painter.transform.calculatePosMatrix(tile.tileID.toUnwrapped(), align),
+        'u_matrix': transform,
         'u_image': 0,
-        'u_latrange': getTileLatRange(painter, tile.tileID),
+        'u_latrange': getTileLatRange(painter, tileID),
         'u_light': [layer.paint.get('hillshade-exaggeration'), azimuthal],
         'u_shadow': shadow,
         'u_highlight': highlight,

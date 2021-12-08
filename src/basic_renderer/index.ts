@@ -440,7 +440,7 @@ class BasicRenderer extends Evented {
           : null;
 
         console.log("Starting to render tiles");
-        console.log(tilesSpec, badTileIdxs);
+        console.log("Specs: ", tilesSpec, drawSpec);
 
         // special case the condition where there are no tiles requested/available
         if (tilesSpec.length - badTileIdxs.length === 0) {
@@ -552,6 +552,15 @@ class BasicRenderer extends Evented {
                 (c.drawSpec.srcTop < yy ? yy - c.drawSpec.srcTop : 0);
               let width = srcRight - srcLeft;
               let height = srcBottom - srcTop;
+              console.log("Drawing image for lyr", tileSetID);
+              console.log({
+                srcLeft,
+                srcTop,
+                width,
+                height,
+                destLeft,
+                destTop
+              });
               c.ctx.drawImage(
                 this._canvas,
                 srcLeft,

@@ -110,10 +110,12 @@ class BasicSourceCache extends Evented {
   getTileByID(tileID) {
     return this.getTile(tileID); //alias
   }
+
   getTile(tileID) {
     // note that the requested tile should actually also feature in currentlyRenderingTiles..but that's harder to query
     return this._tilesInUse[tileID.key];
   }
+
   serialize() {
     return this._source.serialize();
   }

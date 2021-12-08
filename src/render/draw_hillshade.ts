@@ -49,7 +49,7 @@ function renderHillshade(painter, tile, layer, depthMode, stencilMode, colorMode
     gl.bindTexture(gl.TEXTURE_2D, fbo.colorAttachment.get());
 
     const uniformValues = hillshadeUniformValues(painter, tile, layer);
-
+    
     program.draw(context, gl.TRIANGLES, depthMode, stencilMode, colorMode, CullFaceMode.disabled,
         uniformValues, layer.id, painter.rasterBoundsBuffer,
         painter.quadTriangleIndexBuffer, painter.rasterBoundsSegments);
