@@ -69,7 +69,7 @@ class BasicSourceCache extends Evented {
     // you can also manually increment tile.uses, however do not decrement it directly, instead
     // call releaseTile.
 
-    console.log("acquireTile", tileID);
+    // console.log("acquireTile", tileID);
 
     // let tile =
     //   this._tilesInUse[tileID.key] ||
@@ -88,12 +88,12 @@ class BasicSourceCache extends Evented {
     tile.loadedPromise = new Promise((res, rej) => {
       // note that we don't touch the .uses counter here on errors
       let timeout = setTimeout(() => {
-        this._source.abortTile(tile);
+        this._source.abortTile(tile, console.log);
         tile.loadedPromise = null;
         rej("timeout");
       }, TILE_LOAD_TIMEOUT);
+      console.log("Tile:", tile);
       this._source.loadTile(tile, (err) => {
-        console.log("loaded tile", tile);
         clearTimeout(timeout);
         if (err) {
           console.error(err);

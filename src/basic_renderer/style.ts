@@ -29,7 +29,7 @@ export function preprocessStyle(style) {
 class BasicStyle extends Style {
   loadedPromise: Promise<void>;
   sourceCaches: any = {};
-  constructor(stylesheet: any, map: any, options: any = {}) {
+  constructor(style: any, map: any, options: any = {}) {
     super(map, options);
 
     this.loadedPromise = new Promise((res) =>
@@ -38,7 +38,11 @@ class BasicStyle extends Style {
     this.loadedPromise.then(() => {
       this.placement = new Placement(map.transform, 0, true);
     });
-    this.loadJSON(stylesheet);
+    if (typeof style === 'string') {
+        this.loadURL(style);
+    } else {
+        this.loadJSON(style);
+    }
   }
 
   // @ts-ignore

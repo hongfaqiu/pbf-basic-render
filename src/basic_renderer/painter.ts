@@ -20,22 +20,22 @@ class BasicPainter extends Painter {
     this.height = height;
     gl.viewport(0, 0, this.width, this.height);
   }
-  renderLayer(painter, sourceCache, layer, coords) {
-    let layerStylesheet = layerStylesheetFromLayer(layer);
-    if (
-      layerStylesheet &&
-      layerStylesheet.minzoom_ &&
-      coords[0].overscaledZ < layerStylesheet.minzoom_
-    )
-      return;
-    if (
-      layerStylesheet &&
-      layerStylesheet.maxzoom_ &&
-      coords[0].overscaledZ >= layerStylesheet.maxzoom_
-    )
-      return;
-    super.renderLayer(painter, sourceCache, layer, coords);
-  }
+  // renderLayer(painter, sourceCache, layer, coords) {
+  //   let layerStylesheet = layerStylesheetFromLayer(layer);
+  //   if (
+  //     layerStylesheet &&
+  //     layerStylesheet.minzoom_ &&
+  //     coords[0].overscaledZ < layerStylesheet.minzoom_
+  //   )
+  //     return;
+  //   if (
+  //     layerStylesheet &&
+  //     layerStylesheet.maxzoom_ &&
+  //     coords[0].overscaledZ >= layerStylesheet.maxzoom_
+  //   )
+  //     return;
+  //   super.renderLayer(painter, sourceCache, layer, coords);
+  // }
 }
 
 export default BasicPainter;

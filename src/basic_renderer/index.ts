@@ -7,17 +7,18 @@ import { Source } from "../source/source";
 import { queryRenderedFeatures } from "../source/query_features";
 import EvaluationParameters from "../style/evaluation_parameters";
 import { Placement } from "../symbol/placement";
-import assert from "assert";
 import BasicStyle, { preprocessStyle } from "./style";
 import isSupported from "@mapbox/mapbox-gl-supported";
 import { RequestManager } from "../util/request_manager";
+import { getImage, getJSON, ResourceType } from '../util/ajax';
+import Transform from "../geo/transform";
 
 const DEFAULT_RESOLUTION = 256;
 const OFFSCREEN_CANV_SIZE = 1024;
 
 class BasicRenderer extends Evented {
   _canvas: HTMLCanvasElement;
-  transform: object;
+  transform: Transform;
   _initStyle: any;
   _style: BasicStyle;
   painter: BasicPainter;
@@ -48,33 +49,37 @@ class BasicRenderer extends Evented {
     );
     this._canvas.width = OFFSCREEN_CANV_SIZE;
     this._canvas.height = OFFSCREEN_CANV_SIZE;
-    this.transform = {
-      zoom: 0,
-      angle: 0,
-      pitch: 0,
-      _pitch: 0,
-      scaleZoom: () => 0,
-      cameraToCenterDistance: 1,
-      cameraToTileDistance: () => 1,
-      clone: () => this.transform,
-      width: OFFSCREEN_CANV_SIZE,
-      height: OFFSCREEN_CANV_SIZE,
-      pixelsToGLUnits: [2 / OFFSCREEN_CANV_SIZE, -2 / OFFSCREEN_CANV_SIZE],
-      tileZoom: (tile) => tile.tileID.canonical.z,
-      calculatePosMatrix: (tileID) => tileID.posMatrix,
-    };
-    preprocessStyle(options.style);
+    // this.transform = {
+    //   zoom: 0,
+    //   angle: 0,
+    //   pitch: 0,
+    //   _pitch: 0,
+    //   scaleZoom: () => 0,
+    //   cameraToCenterDistance: 1,
+    //   cameraToTileDistance: () => 1,
+    //   clone: () => this.transform,
+    //   width: OFFSCREEN_CANV_SIZE,
+    //   height: OFFSCREEN_CANV_SIZE,
+    //   pixelsToGLUnits: [2 / OFFSCREEN_CANV_SIZE, -2 / OFFSCREEN_CANV_SIZE],
+    //   tileZoom: (tile) => tile.tileID.canonical.z,
+    //   calculatePosMatrix: (tileID) => tileID.posMatrix,
+    // };
+    this.transform = new Transform();
+    this.transform.resize(OFFSCREEN_CANV_SIZE, OFFSCREEN_CANV_SIZE);
+
+    //preprocessStyle(options.style);
     this._initStyle = options.style;
     // transition: { duration: 0 }
-    const s1 = Object.assign({}, options.style, {});
-    console.log(s1);
+    const s1 = options.style // Object.assign({}, options.style, {});
+    //console.log(s1);
     this._style = new BasicStyle(s1, this);
-    console.log(this._style);
+    //console.log(this._style);
 
     this._style.setEventedParent(this, { style: this._style });
     this._style.on("style.load", (e) => this._onReady());
     this._createGlContext();
     this.painter.resize(OFFSCREEN_CANV_SIZE, OFFSCREEN_CANV_SIZE);
+    this.painter.transform = this.transform;
     this._pendingRenders = new Map(); // tileSetID => render state
     this._nextRenderId = 0; // each new render state created has a unique renderId in addition to its tileSetID, which isn't unique
     this._configId = 0; // for use with async config changes..see setXYZ methods below
@@ -88,10 +93,6 @@ class BasicRenderer extends Evented {
     // }
     console.log("Began updating styles");
     this._style.update(new EvaluationParameters(16));
-  }
-
-  _transformRequest(url, resourceType) {
-    return { url: url, headers: {}, credentials: "" };
   }
 
   _calculatePosMatrix(transX, transY, tileSize) {
@@ -310,7 +311,6 @@ class BasicRenderer extends Evented {
     // we define the origin as the minimum left and top values mentioned in tileSpec/drawSpec
     // and adjust all the top/left values to use this reference.  This cannonicalization means
     // we can spot tile sets that are the same except for a gobal translation.
-    console.log(tilesSpec, drawSpec);
 
     let minLeft = tilesSpec
       .map((s) => s.left)
@@ -521,7 +521,7 @@ class BasicRenderer extends Evented {
             // only one tile will be supply to renderTiles function
             // so we use the first tile's zoom level
             this._style.update(new EvaluationParameters(tilesSpec[0].z));
-
+            //this.transform.zoom = tilesSpec[0].z;
             this.painter.transform.zoom = tilesSpec[0].z-0.5;
             // @ts-ignore
             this.painter.render(this._style, {
@@ -585,7 +585,7 @@ class BasicRenderer extends Evented {
   }
 
   queryRenderedFeatures(opts) {
-    assert(opts.source);
+    if (!opts.source) throw new Error("source option is required");
 
     let layers = {};
     this.getLayersVisible(opts.renderedZoom, opts.source).forEach(
