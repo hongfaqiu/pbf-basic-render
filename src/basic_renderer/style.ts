@@ -3,6 +3,8 @@ import { create } from "../source/source";
 import { Placement } from "../symbol/placement";
 import { validateStyle } from "../style/validate_style";
 import SourceCache from "./source_cache";
+import { StyleSpecification } from "../style-spec/types";
+import { source } from "../style-spec/validate_style";
 
 export function preprocessStyle(style) {
   if (typeof style !== "object") return;
@@ -43,6 +45,26 @@ class BasicStyle extends Style {
     } else {
         this.loadJSON(style);
     }
+  }
+
+  _load(json: StyleSpecification, validate: boolean) {
+
+    let sources = {};
+    for (const [key, source] of Object.entries(json.sources)) {
+      if (source.type != 'raster-dem') {
+        sources[key] = source;
+      }
+    }
+
+    const filteredJSON = {
+      ...json,
+      layers: json.layers.filter((layer) => {
+        return layer.type !== "hillshade";
+      }),
+      sources,
+    }
+
+    super._load(filteredJSON, validate);
   }
 
   // @ts-ignore
