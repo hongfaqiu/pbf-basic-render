@@ -30,9 +30,12 @@ export function preprocessStyle(style) {
 
 class BasicStyle extends Style {
   loadedPromise: Promise<void>;
+  filterHillshadeLayers: boolean = false;
+  hasHillshadeLayer: boolean = false;
   sourceCaches: any = {};
   constructor(style: any, map: any, options: any = {}) {
     super(map, options);
+    this.filterHillshadeLayers = options.filterHillshadeLayers ?? true;
 
     this.loadedPromise = new Promise((res) =>
       this.on("style.load", (e) => res())
@@ -48,23 +51,25 @@ class BasicStyle extends Style {
   }
 
   _load(json: StyleSpecification, validate: boolean) {
-
-    let sources = {};
-    for (const [key, source] of Object.entries(json.sources)) {
-      if (source.type != 'raster-dem') {
-        sources[key] = source;
+    let style = {...json};
+    if (this.filterHillshadeLayers) {
+      // We don't currently support hillshade layers, so we filter them out
+      let sources = {};
+      for (const [key, source] of Object.entries(json.sources)) {
+        if (source.type !== 'raster-dem') {
+          sources[key] = source;
+        }
+      }
+      style.sources = sources
+      
+      style.layers = json.layers.filter((layer) => {
+        return layer.type !== "hillshade";
+      })
+      if (style.layers.length < json.layers.length) {
+        this.hasHillshadeLayer = true;
       }
     }
-
-    const filteredJSON = {
-      ...json,
-      layers: json.layers.filter((layer) => {
-        return layer.type !== "hillshade";
-      }),
-      sources,
-    }
-
-    super._load(filteredJSON, validate);
+    super._load(style, validate);
   }
 
   // @ts-ignore
