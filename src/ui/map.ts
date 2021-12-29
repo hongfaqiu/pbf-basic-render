@@ -18,12 +18,13 @@ import LogoControl from './control/logo_control';
 import {supported} from '@mapbox/mapbox-gl-supported';
 import {RGBAImage} from '../util/image';
 import {Event, ErrorEvent, Listener} from '../util/evented';
-import {MapMouseEvent} from './events';
+import {MapEventType, MapLayerEventType, MapMouseEvent} from './events';
 import TaskQueue from '../util/task_queue';
 import webpSupported from '../util/webp_supported';
 import {PerformanceMarkers, PerformanceUtils} from '../util/performance';
-
 import {setCacheLimits} from '../util/tile_request_cache';
+import {Source} from '../source/source';
+import StyleLayer from '../style/style_layer';
 
 import type {RequestTransformFunction} from '../util/request_manager';
 import type {LngLatLike} from '../geo/lng_lat';
@@ -117,6 +118,9 @@ const defaultMaxZoom = 22;
 const defaultMinPitch = 0;
 const defaultMaxPitch = 60;
 
+// use this variable to check maxPitch for validity
+const maxPitchThreshold = 85;
+
 const defaultOptions = {
     center: [0, 0],
     zoom: 0,
@@ -172,8 +176,8 @@ const defaultOptions = {
  * @param {HTMLElement|string} options.container The HTML element in which Mapbox GL JS will render the map, or the element's string `id`. The specified element must have no children.
  * @param {number} [options.minZoom=0] The minimum zoom level of the map (0-24).
  * @param {number} [options.maxZoom=22] The maximum zoom level of the map (0-24).
- * @param {number} [options.minPitch=0] The minimum pitch of the map (0-60).
- * @param {number} [options.maxPitch=60] The maximum pitch of the map (0-60).
+ * @param {number} [options.minPitch=0] The minimum pitch of the map (0-85). Values greater than 60 degrees are experimental and may result in rendering issues. If you encounter any, please raise an issue with details in the MapLibre project.
+ * @param {number} [options.maxPitch=60] The maximum pitch of the map (0-85). Values greater than 60 degrees are experimental and may result in rendering issues. If you encounter any, please raise an issue with details in the MapLibre project.
  * @param {Object|string} [options.style] The map's Mapbox style. This must be an a JSON object conforming to
  * the schema described in the [Mapbox Style Specification](https://mapbox.com/mapbox-gl-style-spec/), or a URL to
  * such JSON.
@@ -228,7 +232,7 @@ const defaultOptions = {
  * @param {LngLatLike} [options.center=[0, 0]] The initial geographical centerpoint of the map. If `center` is not specified in the constructor options, Mapbox GL JS will look for it in the map's style object. If it is not specified in the style, either, it will default to `[0, 0]` Note: Mapbox GL uses longitude, latitude coordinate order (as opposed to latitude, longitude) to match GeoJSON.
  * @param {number} [options.zoom=0] The initial zoom level of the map. If `zoom` is not specified in the constructor options, Mapbox GL JS will look for it in the map's style object. If it is not specified in the style, either, it will default to `0`.
  * @param {number} [options.bearing=0] The initial bearing (rotation) of the map, measured in degrees counter-clockwise from north. If `bearing` is not specified in the constructor options, Mapbox GL JS will look for it in the map's style object. If it is not specified in the style, either, it will default to `0`.
- * @param {number} [options.pitch=0] The initial pitch (tilt) of the map, measured in degrees away from the plane of the screen (0-60). If `pitch` is not specified in the constructor options, Mapbox GL JS will look for it in the map's style object. If it is not specified in the style, either, it will default to `0`.
+ * @param {number} [options.pitch=0] The initial pitch (tilt) of the map, measured in degrees away from the plane of the screen (0-85). If `pitch` is not specified in the constructor options, MapLibre GL JS will look for it in the map's style object. If it is not specified in the style, either, it will default to `0`. Values greater than 60 degrees are experimental and may result in rendering issues. If you encounter any, please raise an issue with details in the MapLibre project.
  * @param {LngLatBoundsLike} [options.bounds] The initial bounds of the map. If `bounds` is specified, it overrides `center` and `zoom` constructor options.
  * @param {Object} [options.fitBoundsOptions] A {@link Map#fitBounds} options object to use _only_ when fitting the initial `bounds` provided above.
  * @param {boolean} [options.renderWorldCopies=true]  If `true`, multiple copies of the world will be rendered side by side beyond -180 and 180 degrees longitude. If set to `false`:
@@ -378,8 +382,8 @@ class Map extends Camera {
             throw new Error(`minPitch must be greater than or equal to ${defaultMinPitch}`);
         }
 
-        if (options.maxPitch != null && options.maxPitch > defaultMaxPitch) {
-            throw new Error(`maxPitch must be less than or equal to ${defaultMaxPitch}`);
+        if (options.maxPitch != null && options.maxPitch > maxPitchThreshold) {
+            throw new Error(`maxPitch must be less than or equal to ${maxPitchThreshold}`);
         }
 
         const transform = new Transform(options.minZoom, options.maxZoom, options.minPitch, options.maxPitch, options.renderWorldCopies);
@@ -742,7 +746,7 @@ class Map extends Camera {
      * If the map's current pitch is lower than the new minimum,
      * the map will pitch to the new minimum.
      *
-     * @param {number | null | undefined} minPitch The minimum pitch to set (0-60).
+     * @param {number | null | undefined} minPitch The minimum pitch to set (0-85). Values greater than 60 degrees are experimental and may result in rendering issues. If you encounter any, please raise an issue with details in the MapLibre project.
      *   If `null` or `undefined` is provided, the function removes the current minimum pitch (i.e. sets it to 0).
      * @returns {Map} `this`
      */
@@ -777,7 +781,7 @@ class Map extends Camera {
      * If the map's current pitch is higher than the new maximum,
      * the map will pitch to the new maximum.
      *
-     * @param {number | null | undefined} maxPitch The maximum pitch to set.
+     * @param {number | null | undefined} maxPitch The maximum pitch to set (0-85). Values greater than 60 degrees are experimental and may result in rendering issues. If you encounter any, please raise an issue with details in the MapLibre project.
      *   If `null` or `undefined` is provided, the function removes the current maximum pitch (sets it to 60).
      * @returns {Map} `this`
      */
@@ -785,8 +789,8 @@ class Map extends Camera {
 
         maxPitch = maxPitch === null || maxPitch === undefined ? defaultMaxPitch : maxPitch;
 
-        if (maxPitch > defaultMaxPitch) {
-            throw new Error(`maxPitch must be less than or equal to ${defaultMaxPitch}`);
+        if (maxPitch > maxPitchThreshold) {
+            throw new Error(`maxPitch must be less than or equal to ${maxPitchThreshold}`);
         }
 
         if (maxPitch >= this.transform.minPitch) {
@@ -1005,10 +1009,10 @@ class Map extends Camera {
      * | [`sourcedataloading`](#map.event:sourcedataloading)       |                           |
      * | [`styleimagemissing`](#map.event:styleimagemissing)       |                           |
      *
-     * @param {string} layerId (optional) The ID of a style layer. Event will only be triggered if its location
+     * @param {string | Listener} layerIdOrListener The ID of a style layer or a listener if no ID is provided. Event will only be triggered if its location
      * is within a visible feature in this layer. The event will have a `features` property containing
-     * an array of the matching features. If `layerId` is not supplied, the event will not have a `features` property.
-     * Please note that many event types are not compatible with the optional `layerId` parameter.
+     * an array of the matching features. If `layerIdOrListener` is not supplied, the event will not have a `features` property.
+     * Please note that many event types are not compatible with the optional `layerIdOrListener` parameter.
      * @param {Function} listener The function to be called when the event is fired.
      * @returns {Map} `this`
      * @example
@@ -1047,13 +1051,19 @@ class Map extends Camera {
      * @see [Create a hover effect](https://maplibre.org/maplibre-gl-js-docs/example/hover-styles/)
      * @see [Create a draggable marker](https://maplibre.org/maplibre-gl-js-docs/example/drag-a-point/)
      */
+    on<T extends keyof MapLayerEventType>(
+        type: T,
+        layer: string,
+        listener: (ev: MapLayerEventType[T] & Object) => void,
+    ): this;
+    on<T extends keyof MapEventType>(type: T, listener: (ev: MapEventType[T] & Object) => void): this;
     on(type: MapEvent, listener: Listener): this;
-    on(type: MapEvent, layerId: any, listener?: Listener): this {
+    on(type: MapEvent, layerIdOrListener: string | Listener, listener?: Listener): this {
         if (listener === undefined) {
-            return super.on(type, layerId);
+            return super.on(type, layerIdOrListener as Listener);
         }
 
-        const delegatedListener = this._createDelegatedListener(type, layerId, listener);
+        const delegatedListener = this._createDelegatedListener(type, layerIdOrListener, listener);
 
         this._delegatedListeners = this._delegatedListeners || {};
         this._delegatedListeners[type] = this._delegatedListeners[type] || [];
@@ -1089,20 +1099,26 @@ class Map extends Camera {
      * a visible portion of the specified layer from outside that layer or outside the map canvas. `mouseleave`
      * and `mouseout` events are triggered when the cursor leaves a visible portion of the specified layer, or leaves
      * the map canvas.
-     * @param {string} layerId The ID of a style layer. Only events whose location is within a visible
+     * @param {string} layerIdOrListener The ID of a style layer or a listener if no ID is provided. Only events whose location is within a visible
      * feature in this layer will trigger the listener. The event will have a `features` property containing
      * an array of the matching features.
      * @param {Function} listener The function to be called when the event is fired.
      * @returns {Map} `this`
      */
+    once<T extends keyof MapLayerEventType>(
+        type: T,
+        layer: string,
+        listener: (ev: MapLayerEventType[T] & Object) => void,
+    ): this;
+    once<T extends keyof MapEventType>(type: T, listener: (ev: MapEventType[T] & Object) => void): this;
     once(type: MapEvent, listener: Listener): this;
-    once(type: MapEvent, layerId: any, listener?: Listener): this {
+    once(type: MapEvent, layerIdOrListener: string | Listener, listener?: Listener): this {
 
         if (listener === undefined) {
-            return super.once(type, layerId);
+            return super.once(type, layerIdOrListener as Listener);
         }
 
-        const delegatedListener = this._createDelegatedListener(type, layerId, listener);
+        const delegatedListener = this._createDelegatedListener(type, layerIdOrListener, listener);
 
         for (const event in delegatedListener.delegates) {
             this.once(event as any, delegatedListener.delegates[event]);
@@ -1127,21 +1143,27 @@ class Map extends Camera {
      * Removes an event listener for layer-specific events previously added with `Map#on`.
      *
      * @param {string} type The event type previously used to install the listener.
-     * @param {string} layerId The layer ID previously used to install the listener.
+     * @param {string} layerIdOrListener The layer ID or listener previously used to install the listener.
      * @param {Function} listener The function previously installed as a listener.
      * @returns {Map} `this`
      */
+    off<T extends keyof MapLayerEventType>(
+        type: T,
+        layer: string,
+        listener: (ev: MapLayerEventType[T] & Object) => void,
+    ): this;
+    off<T extends keyof MapEventType>(type: T, listener: (ev: MapEventType[T] & Object) => void): this;
     off(type: MapEvent, listener: Listener): this;
-    off(type: MapEvent, layerId: any, listener?: Listener): this {
+    off(type: MapEvent, layerIdOrListener: string | Listener, listener?: Listener): this {
         if (listener === undefined) {
-            return super.off(type, layerId);
+            return super.off(type, layerIdOrListener as Listener);
         }
 
         const removeDelegatedListener = (delegatedListeners) => {
             const listeners = delegatedListeners[type];
             for (let i = 0; i < listeners.length; i++) {
                 const delegatedListener = listeners[i];
-                if (delegatedListener.layer === layerId && delegatedListener.listener === listener) {
+                if (delegatedListener.layer === layerIdOrListener && delegatedListener.listener === listener) {
                     for (const event in delegatedListener.delegates) {
                         this.off(((event as any)), delegatedListener.delegates[event]);
                     }
@@ -1454,7 +1476,7 @@ class Map extends Camera {
      * var styleJson = map.getStyle();
      *
      */
-    getStyle() {
+    getStyle(): StyleSpecification {
         if (this.style) {
             return this.style.serialize();
         }
@@ -1585,7 +1607,7 @@ class Map extends Camera {
      * of an image source.
      *
      * @param {string} id The ID of the source to get.
-     * @returns {?Object} The style source with the specified ID or `undefined` if the ID
+     * @returns {Source | undefined} The style source with the specified ID or `undefined` if the ID
      * corresponds to no existing sources.
      * The shape of the object varies by source type.
      * A list of options for each source type is available on the Mapbox Style Specification's
@@ -1596,7 +1618,7 @@ class Map extends Camera {
      * @see [Animate a point](https://maplibre.org/maplibre-gl-js-docs/example/animate-point-along-line/)
      * @see [Add live realtime data](https://maplibre.org/maplibre-gl-js-docs/example/live-geojson/)
      */
-    getSource(id: string) {
+    getSource(id: string): Source | undefined {
         return this.style.getSource(id);
     }
 
@@ -1969,7 +1991,7 @@ class Map extends Camera {
      * Returns the layer with the specified ID in the map's style.
      *
      * @param {string} id The ID of the layer to get.
-     * @returns {?Object} The layer with the specified ID, or `undefined`
+     * @returns {StyleLayer} The layer with the specified ID, or `undefined`
      *   if the ID corresponds to no existing layers.
      *
      * @example
@@ -1978,7 +2000,7 @@ class Map extends Camera {
      * @see [Filter symbols by toggling a list](https://maplibre.org/maplibre-gl-js-docs/example/filter-markers/)
      * @see [Filter symbols by text input](https://maplibre.org/maplibre-gl-js-docs/example/filter-markers-by-input/)
      */
-    getLayer(id: string) {
+    getLayer(id: string): StyleLayer {
         return this.style.getLayer(id);
     }
 
@@ -2655,6 +2677,8 @@ class Map extends Camera {
 
         const extension = this.painter.context.gl.getExtension('WEBGL_lose_context');
         if (extension) extension.loseContext();
+        this._canvas.removeEventListener('webglcontextrestored', this._contextRestored, false);
+        this._canvas.removeEventListener('webglcontextlost', this._contextLost, false);
         DOM.remove(this._canvasContainer);
         DOM.remove(this._controlContainer);
         this._container.classList.remove('maplibregl-map', 'mapboxgl-map');
