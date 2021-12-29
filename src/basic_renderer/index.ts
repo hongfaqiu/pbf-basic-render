@@ -10,7 +10,7 @@ import { Placement } from "../symbol/placement";
 import BasicStyle, { preprocessStyle } from "./style";
 import isSupported from "@mapbox/mapbox-gl-supported";
 import { RequestManager } from "../util/request_manager";
-import { getImage, getJSON, ResourceType } from '../util/ajax';
+import { getImage, getJSON, ResourceType } from "../util/ajax";
 import Transform from "../geo/transform";
 
 const DEFAULT_RESOLUTION = 256;
@@ -70,7 +70,7 @@ class BasicRenderer extends Evented {
     //preprocessStyle(options.style);
     this._initStyle = options.style;
     // transition: { duration: 0 }
-    const s1 = options.style // Object.assign({}, options.style, {});
+    const s1 = options.style; // Object.assign({}, options.style, {});
     //console.log(s1);
     this._style = new BasicStyle(s1, this);
     //console.log(this._style);
@@ -106,10 +106,10 @@ class BasicRenderer extends Evented {
       The translate/scale functions here could probably be ditched in favour of
       the mat4 versions, but I found it easier to do the multiplies myself.
     */
-        //     this.pixelsToGLUnits = [2 / width, -2 / height];
-        // this._constrain();
-        // this._calcMatrices();
-    
+    //     this.pixelsToGLUnits = [2 / width, -2 / height];
+    // this._constrain();
+    // this._calcMatrices();
+
     var translate = (a, v) => {
       this._tmpMat4f64b = this._tmpMat4f64b || new Float32Array(16);
       mat4.identity(this._tmpMat4f64b);
@@ -146,8 +146,8 @@ class BasicRenderer extends Evented {
       {
         failIfMajorPerformanceCaveat: false,
         preserveDrawingBuffer: false,
-      },
-      isSupported.webGLContextAttributes
+      }
+      //isSupported.webGLContextAttributes
     );
 
     this._gl =
@@ -522,7 +522,7 @@ class BasicRenderer extends Evented {
             // so we use the first tile's zoom level
             this._style.update(new EvaluationParameters(tilesSpec[0].z));
             //this.transform.zoom = tilesSpec[0].z;
-            this.painter.transform.zoom = tilesSpec[0].z-0.5;
+            this.painter.transform.zoom = tilesSpec[0].z - 0.5;
             // @ts-ignore
             this.painter.render(this._style, {
               showTileBoundaries: false,
