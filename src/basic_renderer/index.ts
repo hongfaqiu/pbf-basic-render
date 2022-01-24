@@ -36,7 +36,7 @@ class BasicRenderer extends Evented {
     super();
     this._requestManager = new RequestManager(options.transformRequest);
     this._canvas = document.createElement("canvas");
-    this._canvas.style.imageRendering = "pixelated";
+    //this._canvas.style.imageRendering = "pixelated";
     this._canvas.addEventListener(
       "webglcontextlost",
       () => console.log("webglcontextlost"),
@@ -513,7 +513,7 @@ class BasicRenderer extends Evented {
                 (t.tileID.posMatrix = this._calculatePosMatrix(
                   t.left - xx,
                   t.top - yy,
-                  t.tileSize
+                  t.tileSize * 2
                 ))
             );
 
@@ -522,7 +522,7 @@ class BasicRenderer extends Evented {
             // so we use the first tile's zoom level
             this._style.update(new EvaluationParameters(tilesSpec[0].z));
             //this.transform.zoom = tilesSpec[0].z;
-            this.painter.transform.zoom = tilesSpec[0].z - 0.5;
+            this.painter.transform.zoom = tilesSpec[0].z; //- 0.5;
             // @ts-ignore
             this.painter.render(this._style, {
               showTileBoundaries: false,
