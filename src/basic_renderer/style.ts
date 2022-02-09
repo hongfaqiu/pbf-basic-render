@@ -35,7 +35,7 @@ class BasicStyle extends Style {
   sourceCaches: any = {};
   constructor(style: any, map: any, options: any = {}) {
     super(map, options);
-    this.filterHillshadeLayers = options.filterHillshadeLayers ?? true;
+    this.filterHillshadeLayers = options.filterHillshadeLayers ?? false;
 
     this.loadedPromise = new Promise((res) =>
       this.on("style.load", (e) => res())
@@ -43,28 +43,28 @@ class BasicStyle extends Style {
     this.loadedPromise.then(() => {
       this.placement = new Placement(map.transform, 0, true);
     });
-    if (typeof style === 'string') {
-        this.loadURL(style);
+    if (typeof style === "string") {
+      this.loadURL(style);
     } else {
-        this.loadJSON(style);
+      this.loadJSON(style);
     }
   }
 
   _load(json: StyleSpecification, validate: boolean) {
-    let style = {...json};
+    let style = { ...json };
     if (this.filterHillshadeLayers) {
       // We don't currently support hillshade layers, so we filter them out
       let sources = {};
       for (const [key, source] of Object.entries(json.sources)) {
-        if (source.type !== 'raster-dem') {
+        if (source.type !== "raster-dem") {
           sources[key] = source;
         }
       }
-      style.sources = sources
-      
+      style.sources = sources;
+
       style.layers = json.layers.filter((layer) => {
         return layer.type !== "hillshade";
-      })
+      });
       if (style.layers.length < json.layers.length) {
         this.hasHillshadeLayer = true;
       }

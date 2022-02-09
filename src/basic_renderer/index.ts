@@ -72,7 +72,9 @@ class BasicRenderer extends Evented {
     // transition: { duration: 0 }
     const s1 = options.style; // Object.assign({}, options.style, {});
     //console.log(s1);
-    this._style = new BasicStyle(s1, this);
+    this._style = new BasicStyle(s1, this, {
+      filterHillshadeLayers: options.filterHillshadeLayers,
+    });
     //console.log(this._style);
 
     this._style.setEventedParent(this, { style: this._style });
@@ -130,10 +132,10 @@ class BasicRenderer extends Evented {
     // @ts-ignore
     mat4.identity(this._tmpMat4f64);
     let factor = tileSize / OFFSCREEN_CANV_SIZE;
-    scale(this._tmpMat4f64, [(2 / EXTENT) * factor, (-2 / EXTENT) * factor, 1]);
+    scale(this._tmpMat4f64, [(1 / EXTENT) * factor, (-1 / EXTENT) * factor, 1]);
     translate(this._tmpMat4f64, [
-      -1 + (2 * transX) / OFFSCREEN_CANV_SIZE,
-      1 - (2 * transY) / OFFSCREEN_CANV_SIZE,
+      -1 + (1 * transX) / OFFSCREEN_CANV_SIZE,
+      1 - (1 * transY) / OFFSCREEN_CANV_SIZE,
       0,
     ]);
 
@@ -522,7 +524,7 @@ class BasicRenderer extends Evented {
             // so we use the first tile's zoom level
             this._style.update(new EvaluationParameters(tilesSpec[0].z));
             //this.transform.zoom = tilesSpec[0].z;
-            this.painter.transform.zoom = tilesSpec[0].z; //- 0.5;
+            this.painter.transform.zoom = tilesSpec[0].z;
             // @ts-ignore
             this.painter.render(this._style, {
               showTileBoundaries: false,
@@ -559,7 +561,7 @@ class BasicRenderer extends Evented {
                 width,
                 height,
                 destLeft,
-                destTop
+                destTop,
               });
               c.ctx.drawImage(
                 this._canvas,
