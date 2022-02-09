@@ -422,17 +422,17 @@ class BasicRenderer extends Evented {
     Promise.all(
       state.tiles.map((t, ii) =>
         t.loadedPromise.catch((err) => {
-          console.log("Found bad tile", t, err);
+          //console.log("Found bad tile", t, err);
           badTileIdxs.push(ii);
         })
       )
     )
       .catch((err) => {
-        console.log("Caught error!");
+        //console.log("Caught error!");
         this._finishRender(tileSetID, renderId, err); // will delete the pendingRender so the next promise's initial check will fail
       })
       .then(() => {
-        console.log("Handler");
+        //console.log("Handler");
         state = this._pendingRenders.get(tileSetID);
         if (!state || state.renderId !== renderId) {
           return; // render for this tileGroupID has been canceled, or superceded.
@@ -441,8 +441,8 @@ class BasicRenderer extends Evented {
           ? `${badTileIdxs.length} of ${tilesSpec.length} tiles not available`
           : null;
 
-        console.log("Starting to render tiles");
-        console.log("Specs: ", tilesSpec, drawSpec);
+        //console.log("Starting to render tiles");
+        //console.log("Specs: ", tilesSpec, drawSpec);
 
         // special case the condition where there are no tiles requested/available
         if (tilesSpec.length - badTileIdxs.length === 0) {
@@ -456,7 +456,7 @@ class BasicRenderer extends Evented {
             )
           );
           this._finishRender(tileSetID, renderId, err);
-          console.log("No tiles to render");
+          //console.log("No tiles to render");
           return;
         }
 
@@ -489,7 +489,7 @@ class BasicRenderer extends Evented {
           .map((c) => c.drawSpec.srcTop + c.drawSpec.height)
           .reduce((a, b) => Math.max(a, b), -Infinity);
 
-        console.log("Still going");
+        //console.log("Still going");
 
         // iterate over OFFSCREEN_CANV_SIZE x OFFSCREEN_CANV_SIZE blocks of that bounding box
         for (let xx = xSrcMin; xx < xSrcMax; xx += OFFSCREEN_CANV_SIZE) {
@@ -505,7 +505,7 @@ class BasicRenderer extends Evented {
                 c.drawSpec.srcTop < yy + OFFSCREEN_CANV_SIZE
             );
 
-            console.log(state.tiles);
+            //console.log(state.tiles);
             if (relevantConsumers.length === 0) {
               continue;
             }
@@ -554,15 +554,15 @@ class BasicRenderer extends Evented {
                 (c.drawSpec.srcTop < yy ? yy - c.drawSpec.srcTop : 0);
               let width = srcRight - srcLeft;
               let height = srcBottom - srcTop;
-              console.log("Drawing image for lyr", tileSetID);
-              console.log({
-                srcLeft,
-                srcTop,
-                width,
-                height,
-                destLeft,
-                destTop,
-              });
+              //console.log("Drawing image for lyr", tileSetID);
+              // console.log({
+              //   srcLeft,
+              //   srcTop,
+              //   width,
+              //   height,
+              //   destLeft,
+              //   destTop,
+              // });
               c.ctx.drawImage(
                 this._canvas,
                 srcLeft,
