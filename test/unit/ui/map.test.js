@@ -938,7 +938,7 @@ test('Map', (t) => {
     t.test('throw on maxPitch greater than valid maxPitch at init', (t) => {
         t.throws(() => {
             createMap(t, {maxPitch: 90});
-        }, new Error(`maxPitch must be less than or equal to 60`));
+        }, new Error(`maxPitch must be less than or equal to 85`));
         t.end();
     });
 
@@ -993,6 +993,33 @@ test('Map', (t) => {
             t.equal(onRemoveCalled, 1);
             t.end();
         });
+    });
+
+    t.test('does not fire "webglcontextlost" after #remove has been called', (t) => {
+        const map = createMap(t);
+        const canvas = map.getCanvas();
+        map.once('webglcontextlost', () => t.fail('"webglcontextlost" fired after #remove has been called'));
+        map.remove();
+        // Dispatch the event manually because at the time of this writing, gl does not support
+        // the WEBGL_lose_context extension.
+        canvas.dispatchEvent(new window.Event('webglcontextlost'));
+        t.end();
+    });
+
+    t.test('does not fire "webglcontextrestored" after #remove has been called', (t) => {
+        const map = createMap(t);
+        const canvas = map.getCanvas();
+
+        map.once('webglcontextlost', () => {
+            map.once('webglcontextrestored', () => t.fail('"webglcontextrestored" fired after #remove has been called'));
+            map.remove();
+            canvas.dispatchEvent(new window.Event('webglcontextrestored'));
+            t.end();
+        });
+
+        // Dispatch the event manually because at the time of this writing, gl does not support
+        // the WEBGL_lose_context extension.
+        canvas.dispatchEvent(new window.Event('webglcontextlost'));
     });
 
     t.test('#redraw', (t) => {

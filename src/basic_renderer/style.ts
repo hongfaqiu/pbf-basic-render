@@ -3,6 +3,8 @@ import { create } from "../source/source";
 import { Placement } from "../symbol/placement";
 import { validateStyle } from "../style/validate_style";
 import SourceCache from "./source_cache";
+import { StyleSpecification } from "../style-spec/types";
+import { source } from "../style-spec/validate_style";
 
 export function preprocessStyle(style) {
   if (typeof style !== "object") return;
@@ -28,9 +30,12 @@ export function preprocessStyle(style) {
 
 class BasicStyle extends Style {
   loadedPromise: Promise<void>;
+  filterHillshadeLayers: boolean = false;
+  hasHillshadeLayer: boolean = false;
   sourceCaches: any = {};
   constructor(style: any, map: any, options: any = {}) {
     super(map, options);
+    this.filterHillshadeLayers = options.filterHillshadeLayers ?? true;
 
     this.loadedPromise = new Promise((res) =>
       this.on("style.load", (e) => res())
@@ -43,6 +48,28 @@ class BasicStyle extends Style {
     } else {
         this.loadJSON(style);
     }
+  }
+
+  _load(json: StyleSpecification, validate: boolean) {
+    let style = {...json};
+    if (this.filterHillshadeLayers) {
+      // We don't currently support hillshade layers, so we filter them out
+      let sources = {};
+      for (const [key, source] of Object.entries(json.sources)) {
+        if (source.type !== 'raster-dem') {
+          sources[key] = source;
+        }
+      }
+      style.sources = sources
+      
+      style.layers = json.layers.filter((layer) => {
+        return layer.type !== "hillshade";
+      })
+      if (style.layers.length < json.layers.length) {
+        this.hasHillshadeLayer = true;
+      }
+    }
+    super._load(style, validate);
   }
 
   // @ts-ignore

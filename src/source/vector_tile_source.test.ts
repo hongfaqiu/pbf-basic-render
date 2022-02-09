@@ -6,23 +6,11 @@ import {OverscaledTileID} from './tile_id';
 import {Evented} from '../util/evented';
 import {RequestManager} from '../util/request_manager';
 import fixturesSource from '../../test/fixtures/source.json';
-import Dispatcher from '../util/dispatcher';
+import {getMockDispatcher, getWrapDispatcher} from '../util/test/util';
 import Map from '../ui/map';
 
-const wrapDispatcher = (dispatcher) => {
-    return {
-        getActor() {
-            return dispatcher;
-        }
-    } as any as Dispatcher;
-};
-
-const mockDispatcher = wrapDispatcher({
-    send () {}
-});
-
 function createSource(options, transformCallback?) {
-    const source = new VectorTileSource('id', options, mockDispatcher, options.eventedParent);
+    const source = new VectorTileSource('id', options, getMockDispatcher(), options.eventedParent);
     source.onAdd({
         transform: {showCollisionBoxes: false},
         _getMapId: () => 1,
@@ -59,9 +47,9 @@ describe('VectorTileSource', () => {
         source.on('data', (e) => {
             if (e.sourceDataType === 'metadata') {
                 expect(source.tiles).toEqual(['http://example.com/{z}/{x}/{y}.png']);
-                expect(source.minzoom).toEqual(1);
-                expect(source.maxzoom).toEqual(10);
-                expect((source as Source).attribution).toEqual('Maplibre');
+                expect(source.minzoom).toBe(1);
+                expect(source.maxzoom).toBe(10);
+                expect((source as Source).attribution).toBe('Maplibre');
                 done();
             }
         });
@@ -75,9 +63,9 @@ describe('VectorTileSource', () => {
         source.on('data', (e) => {
             if (e.sourceDataType === 'metadata') {
                 expect(source.tiles).toEqual(['http://example.com/{z}/{x}/{y}.png']);
-                expect(source.minzoom).toEqual(1);
-                expect(source.maxzoom).toEqual(10);
-                expect((source as Source).attribution).toEqual('Maplibre');
+                expect(source.minzoom).toBe(1);
+                expect(source.maxzoom).toBe(10);
+                expect((source as Source).attribution).toBe('Maplibre');
                 done();
             }
         });
@@ -158,7 +146,7 @@ describe('VectorTileSource', () => {
                 scheme
             });
 
-            source.dispatcher = wrapDispatcher({
+            source.dispatcher = getWrapDispatcher()({
                 send(type, params) {
                     expect(type).toBe('loadTile');
                     expect(expectedURL).toBe(params.request.url);
@@ -205,7 +193,7 @@ describe('VectorTileSource', () => {
             tiles: ['http://example.com/{z}/{x}/{y}.png']
         });
         const events = [];
-        source.dispatcher = wrapDispatcher({
+        source.dispatcher = getWrapDispatcher()({
             send(type, params, cb) {
                 events.push(type);
                 if (cb) setTimeout(cb, 0);
@@ -295,14 +283,14 @@ describe('VectorTileSource', () => {
             tiles: ['http://example.com/{z}/{x}/{y}.png'],
             collectResourceTiming: true
         });
-        source.dispatcher = wrapDispatcher({
+        source.dispatcher = getWrapDispatcher()({
             send(type, params, cb) {
                 expect(params.request.collectResourceTiming).toBeTruthy();
                 setTimeout(cb, 0);
                 done();
 
                 // do nothing for cache size check dispatch
-                source.dispatcher = mockDispatcher;
+                source.dispatcher = getMockDispatcher();
 
                 return 1;
             }
