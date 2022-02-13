@@ -1,17 +1,18 @@
 {
-  "name": "maplibre-gl",
+  "name": "pbf-basic-render",
   "description": "BSD licensed community fork of mapbox-gl, a WebGL interactive maps library",
-  "version": "2.0.0-pre.6",
+  "version": "0.0.2",
   "main": "dist/maplibre-gl.js",
   "style": "dist/maplibre-gl.css",
   "license": "BSD-3-Clause",
   "repository": {
     "type": "git",
-    "url": "git://github.com/maplibre/maplibre-gl-js.git"
+    "url": "git://github.com/hongfaqiu/maplibre-gl-js.git"
   },
   "engines": {
     "node": ">=14.0.0"
   },
+  "keywords": ["mapbox", "pbf"],
   "types": "dist/maplibre-gl.d.ts",
   "type": "module",
   "dependencies": {
@@ -214,9 +215,7 @@
     "codegen": "node --loader ts-node/esm --experimental-specifier-resolution=node build/generate-style-code.ts && node --loader ts-node/esm --experimental-specifier-resolution=node build/generate-struct-arrays.ts && node --loader ts-node/esm --experimental-specifier-resolution=node build/generate-style-spec.ts"
   },
   "files": [
-    "build/",
-    "dist/maplibre-gl*",
-    "dist/style-spec/",
-    "src/"
+    "dist",
+    "README.md"
   ]
 }
