@@ -83,7 +83,7 @@ class BasicSourceCache extends Evented {
           const timeout = setTimeout(() => {
               this._source.abortTile(tile, console.log);
               tile.loadedPromise = null;
-              rej('timeout');
+              rej(new Error('timeout'));
           }, TILE_LOAD_TIMEOUT);
           this._source.loadTile(tile, (err) => {
               clearTimeout(timeout);
@@ -150,7 +150,7 @@ class BasicSourceCache extends Evented {
       });
       this._tileCache.keys().forEach((id) => {
           const tile = this._tileCache.get(id);
-          !tile._isDud && (tile.loadedPromise = null);
+          if (!tile._isDud) (tile.loadedPromise = null);
       });
   }
 
