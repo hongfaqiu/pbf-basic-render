@@ -6,7 +6,7 @@ import {mat4} from 'gl-matrix';
 import {queryRenderedFeatures} from '../source/query_features';
 import EvaluationParameters from '../style/evaluation_parameters';
 import BasicStyle from './style';
-import {RequestManager} from '../util/request_manager';
+import {RequestManager, RequestTransformFunction} from '../util/request_manager';
 import Transform from '../geo/transform';
 import {supported} from '@mapbox/mapbox-gl-supported';
 
@@ -28,10 +28,23 @@ class BasicRenderer extends Evented {
   _gl: RenderingContext;
   _requestManager: RequestManager;
 
-  constructor(options) {
+  /**
+   * new an BasicRenderer Object
+   * @param options basicRender Options
+   * @param options.transformRequest url transformRequest
+   * @param options.canvas enable pass into a canvas paramater as the OFFSCREEN_CANV object,
+   * so we can avoid the error about "Too many active WebGL contexts. Oldest context will be lost."
+   * https://github.com/mapbox/mapbox-gl-js/issues/7332
+   * @param options.style mapbox style
+   */
+  constructor(options: {
+    transformRequest?: RequestTransformFunction;
+    canvas?: HTMLCanvasElement;
+    style: any;
+  }) {
       super();
       this._requestManager = new RequestManager(options.transformRequest);
-      this._canvas = document.createElement('canvas');
+      this._canvas = options.canvas ?? document.createElement('canvas');
       //this._canvas.style.imageRendering = "pixelated";
       this._canvas.addEventListener(
       'webglcontextlost',
@@ -50,9 +63,7 @@ class BasicRenderer extends Evented {
 
       this._initStyle = options.style;
       const s1 = options.style;
-      this._style = new BasicStyle(s1, this, {
-          filterHillshadeLayers: options.filterHillshadeLayers,
-      });
+      this._style = new BasicStyle(s1, this);
 
       this._style.setEventedParent(this, {style: this._style});
       this._style.on('style.load', () => this._onReady());

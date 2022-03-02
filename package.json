@@ -1,7 +1,7 @@
 {
   "name": "pbf-basic-render",
   "description": "Fork of maplibre-gl-js that gives you explicit control of which source tiles you render and where",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "main": "dist/maplibre-gl.js",
   "style": "dist/maplibre-gl.css",
   "license": "BSD-3-Clause",
@@ -215,7 +215,8 @@
     "test-expressions": "node --experimental-specifier-resolution=node test/expression.test.js",
     "test-cov": "nyc --reporter=text-summary --reporter=lcov --cache run-s test-unit test-expressions test-query test-render",
     "test-jest": "jest",
-    "codegen": "node --loader ts-node/esm --experimental-specifier-resolution=node build/generate-style-code.ts && node --loader ts-node/esm --experimental-specifier-resolution=node build/generate-struct-arrays.ts && node --loader ts-node/esm --experimental-specifier-resolution=node build/generate-style-spec.ts"
+    "codegen": "node --loader ts-node/esm --experimental-specifier-resolution=node build/generate-style-code.ts && node --loader ts-node/esm --experimental-specifier-resolution=node build/generate-struct-arrays.ts && node --loader ts-node/esm --experimental-specifier-resolution=node build/generate-style-spec.ts",
+    "prepublish": "npm run build-prod-min"
   },
   "files": [
     "dist",
