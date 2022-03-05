@@ -24,13 +24,14 @@ function propertyType(property) {
                 return property.type;
             case 'enum':
                 return unionType(property.values);
-            case 'array':
-                const elementType = propertyType(typeof property.value === 'string' ? {type: property.value, values: property.values} : property.value)
+            case 'array': {
+                const elementType = propertyType(typeof property.value === 'string' ? {type: property.value, values: property.values} : property.value);
                 if (property.length) {
                     return `[${Array(property.length).fill(elementType).join(', ')}]`;
                 } else {
                     return `Array<${elementType}>`;
                 }
+            }
             case 'light':
                 return 'LightSpecification';
             case 'sources':
@@ -67,7 +68,7 @@ ${Object.keys(properties)
         .filter(k => k !== '*')
         .map(k => `    ${indent}${propertyDeclaration(k, properties[k])}`)
         .join(',\n')}
-${indent}}`
+${indent}}`;
 }
 
 function sourceTypeName(key) {
@@ -113,8 +114,8 @@ function layerType(key) {
 
 const layerTypes = Object.keys(spec.layer.type.values);
 
-fs.writeFileSync('src/style-spec/types.ts',
-`// Generated code; do not edit. Edit build/generate-style-spec.ts instead.
+fs.writeFileSync('src/style-spec/types.g.ts',
+    `// Generated code; do not edit. Edit build/generate-style-spec.ts instead.
 /* eslint-disable */
 
 export type ColorSpecification = string;
@@ -125,16 +126,36 @@ export type ResolvedImageSpecification = string;
 
 export type PromoteIdSpecification = {[_: string]: string} | string;
 
+export type FilterSpecificationInputType = string | number | boolean;
 export type FilterSpecification =
-      ['has', string]
-    | ['!has', string]
-    | ['==', string, string | number | boolean]
-    | ['!=', string, string | number | boolean]
-    | ['>', string, string | number | boolean]
-    | ['>=', string, string | number | boolean]
-    | ['<', string, string | number | boolean]
-    | ['<=', string, string | number | boolean]
-    | Array<string | FilterSpecification>; // Can't type in, !in, all, any, none -- https://github.com/facebook/flow/issues/2443
+    // Lookup
+    | ['at', number, (number |string)[]]
+    | ['get', string, Record<string, unknown>?]
+    | ['has', string, Record<string, unknown>?]
+    | ['in', ...FilterSpecificationInputType[], FilterSpecificationInputType | FilterSpecificationInputType[]]
+    | ['index-of', FilterSpecificationInputType, FilterSpecificationInputType | FilterSpecificationInputType[]]
+    | ['length', string | string[]]
+    | ['slice', string | string[], number]
+    // Decision
+    | ['!', FilterSpecification]
+    | ['!=', string | FilterSpecification, FilterSpecificationInputType]
+    | ['<', string | FilterSpecification, FilterSpecificationInputType]
+    | ['<=', string | FilterSpecification, FilterSpecificationInputType]
+    | ['==', string | FilterSpecification, FilterSpecificationInputType]
+    | ['>', string | FilterSpecification, FilterSpecificationInputType]
+    | ['>=', string | FilterSpecification, FilterSpecificationInputType]
+    | ["all", ...FilterSpecification[], FilterSpecificationInputType]
+    | ["any", ...FilterSpecification[], FilterSpecificationInputType]
+    | ["case", ...FilterSpecification[], FilterSpecificationInputType]
+    | ["coalesce", ...FilterSpecification[], FilterSpecificationInputType]
+    | ["match", ...FilterSpecification[], FilterSpecificationInputType]
+    | ["within", ...FilterSpecification[], FilterSpecificationInputType]
+    // Used in convert.ts
+    | ["!in", ...FilterSpecification[], FilterSpecificationInputType]
+    | ["!has", ...FilterSpecification[], FilterSpecificationInputType]
+    | ["none", ...FilterSpecification[], FilterSpecificationInputType]
+    // Fallbak for others
+    | Array<string | FilterSpecification>
 
 export type TransitionSpecification = {
     duration?: number,

@@ -61,6 +61,15 @@ You should also check [Mapbox-vector-tiles-basic-js-renderer](https://github.com
 
 - ('text-field') render can't work
 
+## Compile
+
+Ensure you have installed [node-gyp](https://github.com/nodejs/node-gyp) and Python environment, and then run this commond: 
+
+```node
+npm install
+npm run postinstall
+```
+
 ## Credit
 
 https://github.com/landtechnologies/Mapbox-vector-tiles-basic-js-renderer

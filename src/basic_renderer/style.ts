@@ -1,7 +1,7 @@
 import Style, {StyleOptions} from '../style/style';
 import {Placement} from '../symbol/placement';
 import SourceCache from './source_cache';
-import {StyleSpecification} from '../style-spec/types';
+import {StyleSpecification} from '../style-spec/types.g';
 
 export function preprocessStyle(style) {
     if (typeof style !== 'object') return;
@@ -26,45 +26,45 @@ export function preprocessStyle(style) {
 }
 
 class BasicStyle extends Style {
-  loadedPromise: Promise<void>;
-  sourceCaches: any = {};
-  constructor(style: any, map: any, options: StyleOptions = {}) {
-      super(map, options);
-      this.loadedPromise = new Promise((res) =>
-          this.on('style.load', (e) => res())
-      );
-      this.loadedPromise.then(() => {
-          this.placement = new Placement(map.transform, 0, true);
-      });
-      if (typeof style === 'string') {
-          this.loadURL(style);
-      } else {
-          this.loadJSON(style);
-      }
-  }
+    loadedPromise: Promise<void>;
+    sourceCaches: any = {};
+    constructor(style: any, map: any, options: StyleOptions = {}) {
+        super(map, options);
+        this.loadedPromise = new Promise((res) =>
+            this.on('style.load', (e) => res())
+        );
+        this.loadedPromise.then(() => {
+            this.placement = new Placement(map.transform, 0, true);
+        });
+        if (typeof style === 'string') {
+            this.loadURL(style);
+        } else {
+            this.loadJSON(style);
+        }
+    }
 
-  _load(json: StyleSpecification, validate: boolean) {
-      const style = {...json};
-      super._load(style, validate);
-  }
+    _load(json: StyleSpecification, validate: boolean) {
+        const style = {...json};
+        super._load(style, validate);
+    }
 
-  // @ts-ignore
-  _createSourceCache(id, source) {
-      return new SourceCache(id, source, this.dispatcher);
-  }
-  // setLayers, and all other methods on the super, e.g. setPaintProperty, should be called
-  // via loadedPromise.then, not synchrounsouly
+    // @ts-ignore
+    _createSourceCache(id, source) {
+        return new SourceCache(id, source, this.dispatcher);
+    }
+    // setLayers, and all other methods on the super, e.g. setPaintProperty, should be called
+    // via loadedPromise.then, not synchrounsouly
 
-  setLayers(visibleLayerNames) {
-      // Note this is not part of mapbox style, but handy to put it here for use with pending-style
-      return Object.keys(this._layers).map((layerName) =>
-          this.setLayoutProperty(
-        layerName,
-        'visibility',
-        visibleLayerNames.includes(layerName) ? 'visible' : 'none'
-          )
-      );
-  }
+    setLayers(visibleLayerNames) {
+        // Note this is not part of mapbox style, but handy to put it here for use with pending-style
+        return Object.keys(this._layers).map((layerName) =>
+            this.setLayoutProperty(
+                layerName,
+                'visibility',
+                visibleLayerNames.includes(layerName) ? 'visible' : 'none'
+            )
+        );
+    }
 }
 
 export default BasicStyle;

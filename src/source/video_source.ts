@@ -10,11 +10,11 @@ import ValidationError from '../style-spec/error/validation_error';
 import type Map from '../ui/map';
 import type Dispatcher from '../util/dispatcher';
 import type {Evented} from '../util/evented';
-import type {VideoSourceSpecification} from '../style-spec/types';
+import type {VideoSourceSpecification} from '../style-spec/types.g';
 
 /**
  * A data source containing video.
- * (See the [Style Specification](https://www.mapbox.com/mapbox-gl-style-spec/#sources-video) for detailed documentation of options.)
+ * (See the [Style Specification](https://maplibre.org/maplibre-gl-js-docs/style-spec/#sources-video) for detailed documentation of options.)
  *
  * @example
  * // add to map

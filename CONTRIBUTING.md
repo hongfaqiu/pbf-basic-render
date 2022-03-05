@@ -13,7 +13,7 @@ Install the Xcode Command Line Tools Package
 xcode-select --install
 ```
 
-Install [node.js](https://nodejs.org/) version ^14
+Install [node.js](https://nodejs.org/) version ^16
 ```bash
 brew install node
 ```
@@ -21,6 +21,11 @@ brew install node
 Clone the repository
 ```bash
 git clone git@github.com:maplibre/maplibre-gl-js.git
+```
+
+Install dependencies for node_canvas (https://github.com/Automattic/node-canvas)
+```bash
+brew install pkg-config cairo pango libpng jpeg giflib librsvg
 ```
 
 Install node module dependencies
@@ -42,9 +47,9 @@ Install [nvm](https://github.com/nvm-sh/nvm)
 curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.38.0/install.sh | bash
 ```
 
-Install [Node.js](https://nodejs.org/) ^14
+Install [Node.js](https://nodejs.org/) ^16
 ```
-nvm install 14
+nvm install 16
 ```
 
 Clone the repository
@@ -60,7 +65,7 @@ npm install
 
 ### Windows
 
-Install [git](https://git-scm.com/), [node.js](https://nodejs.org/) (version ^14), [npm and node-gyp](https://github.com/Microsoft/nodejs-guidelines/blob/master/windows-environment.md#compiling-native-addon-modules).
+Install [git](https://git-scm.com/), [node.js](https://nodejs.org/) (version ^16), [npm and node-gyp](https://github.com/Microsoft/nodejs-guidelines/blob/master/windows-environment.md#compiling-native-addon-modules).
 
 Clone the repository
 ```bash
@@ -107,7 +112,7 @@ See [`test/README.md`](./test/README.md).
 
 ## Writing & Running Benchmarks
 
-See [`bench/README.md`](./bench/README.md).
+See [`test/bench/README.md`](./test/bench/README.md).
 
 ## Code Conventions
 

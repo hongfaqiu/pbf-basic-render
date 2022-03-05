@@ -1,10 +1,10 @@
 import StyleLayer from '../style_layer';
 
-import properties, {HillshadePaintPropsPossiblyEvaluated} from './hillshade_style_layer_properties';
+import properties, {HillshadePaintPropsPossiblyEvaluated} from './hillshade_style_layer_properties.g';
 import {Transitionable, Transitioning, PossiblyEvaluated} from '../properties';
 
-import type {HillshadePaintProps} from './hillshade_style_layer_properties';
-import type {LayerSpecification} from '../../style-spec/types';
+import type {HillshadePaintProps} from './hillshade_style_layer_properties.g';
+import type {LayerSpecification} from '../../style-spec/types.g';
 
 class HillshadeStyleLayer extends StyleLayer {
     _transitionablePaint: Transitionable<HillshadePaintProps>;
