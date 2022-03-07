@@ -16,7 +16,7 @@ class BasicRenderer extends Evented {
     _canvas: HTMLCanvasElement;
     transform: Transform;
     _initStyle: any;
-    _style: BasicStyle;
+    style: BasicStyle;
     painter: BasicPainter;
     _pendingRenders: Map<any, any>;
     _nextRenderId: number;
@@ -63,10 +63,10 @@ class BasicRenderer extends Evented {
         preprocessStyle(options.style);
         this._initStyle = options.style;
         const s1 = options.style;
-        this._style = new BasicStyle(s1, this);
+        this.style = new BasicStyle(s1, this);
 
-        this._style.setEventedParent(this, {style: this._style});
-        this._style.on('style.load', () => this._onReady());
+        this.style.setEventedParent(this, {style: this.style});
+        this.style.on('style.load', () => this._onReady());
         this._createGlContext();
         this.painter.resize(OFFSCREEN_CANV_SIZE, OFFSCREEN_CANV_SIZE);
         this.painter.transform = this.transform;
@@ -81,7 +81,7 @@ class BasicRenderer extends Evented {
         //   layer._transitionablePaint = new Transitionable(layer.properties.paint);
         //   layer._transitioningPaint = layer._transitionablePaint.untransitioned();
         // }
-        this._style.update(new EvaluationParameters(16));
+        this.style.update(new EvaluationParameters(16));
     }
 
     _calculatePosMatrix(transX, transY, tileSize) {
@@ -141,7 +141,7 @@ class BasicRenderer extends Evented {
             throw new Error('Failed to initialize WebGL');
         }
         this.painter = new BasicPainter(this._gl, this.transform);
-        this.painter.style = this._style;
+        this.painter.style = this.style;
     }
 
     /* For the following 3 methods the return value depends on the flag exec:
@@ -156,7 +156,7 @@ class BasicRenderer extends Evented {
       separate the enquing of changes from the actual execution of the changes. */
     setPaintProperty(layer, prop, val, exec = true) {
         this._queuedConfigChanges.push(() =>
-            this._style.setPaintProperty(layer, prop, val)
+            this.style.setPaintProperty(layer, prop, val)
         );
         return exec ?
             this._processConfigQueue(++this._configId) :
@@ -165,7 +165,7 @@ class BasicRenderer extends Evented {
 
     setLayoutProperty(layer, prop, val, exec = true) {
         this._queuedConfigChanges.push(() =>
-            this._style.setLayoutProperty(layer, prop, val)
+            this.style.setLayoutProperty(layer, prop, val)
         );
         return exec ?
             this._processConfigQueue(++this._configId) :
@@ -174,7 +174,7 @@ class BasicRenderer extends Evented {
 
     setFilter(layer, filter, exec = true) {
         // https://www.mapbox.com/mapbox-gl-js/style-spec/#types-filter
-        this._queuedConfigChanges.push(() => this._style.setFilter(layer, filter));
+        this._queuedConfigChanges.push(() => this.style.setFilter(layer, filter));
         return exec ?
             this._processConfigQueue(++this._configId) :
             () => this._processConfigQueue(++this._configId);
@@ -185,7 +185,7 @@ class BasicRenderer extends Evented {
         // trigger the changes, and will resolve to true. All the others will
         // resolve to false.
 
-        return this._style.loadedPromise.then(() => {
+        return this.style.loadedPromise.then(() => {
             if (this._configId !== calledByConfigId) {
                 return false;
             }
@@ -193,14 +193,12 @@ class BasicRenderer extends Evented {
             while (this._queuedConfigChanges.length) {
                 this._queuedConfigChanges.shift()();
             }
-            this._style.update(new EvaluationParameters(16));
+            this.style.update(new EvaluationParameters(16));
             // @ts-ignore
             this.fire('configChanged');
             return true;
         });
     }
-
-    // =============
 
     getLayersVisible(zoom, source) {
         // if zoom is provided will filter by min/max zoom as well as by layer visibility
@@ -208,7 +206,7 @@ class BasicRenderer extends Evented {
         const layerStylesheetFromLayer = layer =>
             layer && layer._eventedParent.stylesheet.layers.find(x => x.id === layer.id);
 
-        return Object.keys(this._style._layers);
+        return Object.keys(this.style._layers);
         // Get rid of filtering for now
         /*
       return Object.keys(this._style._layers)
@@ -250,7 +248,7 @@ class BasicRenderer extends Evented {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     getVisibleSources(zoom) {
         // list of sources with style layers that are visible, optionaly using the zoom to refine the visibility
-        return Object.keys(this._style.sourceCaches).filter(
+        return Object.keys(this.style.sourceCaches).filter(
             (s) => this.getLayersVisible(this.painter._filterForZoom, s).length > 0
         );
     }
@@ -270,7 +268,7 @@ class BasicRenderer extends Evented {
             this._finishRender(s.tileSetID, s.renderId, 'canceled')
         );
         this._pendingRenders.clear();
-        Object.values(this._style.sourceCaches).forEach((s: any) =>
+        Object.values(this.style.sourceCaches).forEach((s: any) =>
             s.invalidateAllLoadedTiles()
         );
     }
@@ -388,7 +386,7 @@ class BasicRenderer extends Evented {
             renderId,
             tiles: tilesSpec.map(s => {
                 const tileID = new OverscaledTileID(s.z, 0, s.z, s.x, s.y);
-                return this._style.sourceCaches[s.source].acquireTile(tileID, s.size); // includes .uses++
+                return this.style.sourceCaches[s.source].acquireTile(tileID, s.size); // includes .uses++
             }),
             consumers: [consumer]
         };
@@ -416,7 +414,7 @@ class BasicRenderer extends Evented {
                 }
 
                 // setup the list of currentlyRenderingTiles for each source
-                Object.values(this._style.sourceCaches).forEach((c: any) => {
+                Object.values(this.style.sourceCaches).forEach((c: any) => {
                     c.currentlyRenderingTiles = [];
                 });
                 tilesSpec.forEach((s, ii) => {
@@ -427,7 +425,7 @@ class BasicRenderer extends Evented {
                     t.tileSize = s.size;
                     t.left = s.left;
                     t.top = s.top;
-                    this._style.sourceCaches[s.source].currentlyRenderingTiles.push(t);
+                    this.style.sourceCaches[s.source].currentlyRenderingTiles.push(t);
                 });
 
                 // Work out the bounding box containing all src regions
@@ -459,9 +457,9 @@ class BasicRenderer extends Evented {
                         // update zoom level
                         // only one tile will be supply to renderTiles function
                         // so we use the first tile's zoom level
-                        this._style.update(new EvaluationParameters(tilesSpec[0].z));
+                        this.style.update(new EvaluationParameters(tilesSpec[0].z));
                         // @ts-ignore
-                        this.painter.render(this._style, {showTileBoundaries: false, showOverdrawInspector: false});
+                        this.painter.render(this.style, {showTileBoundaries: false, showOverdrawInspector: false});
 
                         relevantConsumers.forEach(c => {
                             const srcLeft = Math.max(0, c.drawSpec.srcLeft - xx) | 0;
@@ -481,7 +479,7 @@ class BasicRenderer extends Evented {
                     state.consumers.shift().next(err);
                 }
                 this._pendingRenders.delete(tileSetID);
-                Object.values(this._style.sourceCaches).forEach((c: any) => {
+                Object.values(this.style.sourceCaches).forEach((c: any) => {
                     c.currentlyRenderingTiles = [];
                 });
             });
@@ -499,11 +497,11 @@ class BasicRenderer extends Evented {
 
         const layers = {};
         this.getLayersVisible(opts.renderedZoom, opts.source).forEach(
-            (lyr) => (layers[lyr] = this._style._layers[lyr])
+            (lyr) => (layers[lyr] = this.style._layers[lyr])
         );
 
         // needs reworking
-        const featuresByRenderLayer = queryRenderedFeatures(this._style.sourceCaches[opts.source], layers, opts, [], opts.tileZ, new Transform());
+        const featuresByRenderLayer = queryRenderedFeatures(this.style.sourceCaches[opts.source], layers, opts, [], opts.tileZ, new Transform());
 
         const featuresBySourceLayer = {};
         Object.keys(featuresByRenderLayer).forEach((renderLayerName) =>
@@ -530,6 +528,10 @@ class BasicRenderer extends Evented {
     }
     destroyDebugCanvas() {
         if (this._canvas.parentElement) document.body.removeChild(this._canvas);
+    }
+
+    getPixelRatio() {
+        return devicePixelRatio ?? 1;
     }
 }
 

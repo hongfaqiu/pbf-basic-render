@@ -4,11 +4,12 @@ import Tile from '../source/tile';
 import Point from '@mapbox/point-geometry';
 import EXTENT from '../data/extent';
 import SphericalMercator from '@mapbox/sphericalmercator';
+import {create as createSource, Source} from '../source/source';
+import {Evented} from '../util/evented';
+
 import type {SourceSpecification} from '../style-spec/types.g';
 import type Dispatcher from '../util/dispatcher';
-import {create as createSource} from '../source/source';
-import {Evented} from '../util/evented';
-//import SourceCache from "maplibre-gl-js/src/source/source_cache";
+import type Map from '../ui/map';
 
 const sphericalMercator = new SphericalMercator();
 
@@ -31,9 +32,9 @@ interface ExtTile extends Tile {
 }
 
 class BasicSourceCache extends Evented {
-    _source;
+    _source: Source;
     _tilesInUse = {}; // tileID.key => tile (note that tile's have a .uses counter)
-    map = {};
+    map: Map;
     _tileCache;
     currentlyRenderingTiles;
     _maxTileCacheSize: number;
@@ -52,7 +53,7 @@ class BasicSourceCache extends Evented {
         this._source = createSource(id, options, dispatcher, this);
 
         this._tileCache = new Cache(TILE_CACHE_SIZE, (t) =>
-            this._source.unloadTile(t)
+            this._source.unloadTile(t, () => {})
         );
     }
     getSource() {
@@ -125,10 +126,14 @@ class BasicSourceCache extends Evented {
             this._tileCache.add(tile.tileID, tile);
         } else {
             // this tile isn't ready and isn't needed, so abandon it...
-            this._source.abortTile(tile);
-            this._source.unloadTile(tile);
+            this._source.abortTile(tile, () => {});
+            this._source.unloadTile(tile, () => {});
         }
     }
+    /**
+     * Remove all tiles from this pyramid
+     */
+    clearTiles() {}
 
     loaded() {
         if (!this._source.loaded()) {
@@ -185,9 +190,8 @@ class BasicSourceCache extends Evented {
     reload() {}
     pause() {}
     resume() {}
-    onAdd(map: Map<any, any>) {
+    onAdd(map: Map) {
         this.map = map;
-        // @ts-ignore
         this._maxTileCacheSize = map ? map._maxTileCacheSize : null;
         if (this._source && this._source.onAdd) {
             this._source.onAdd(map);

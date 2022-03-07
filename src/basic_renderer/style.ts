@@ -1,7 +1,7 @@
+import {StyleSpecification} from '../style-spec/types.g';
 import Style, {StyleOptions} from '../style/style';
 import {Placement} from '../symbol/placement';
-import SourceCache from './source_cache';
-import {StyleSpecification} from '../style-spec/types.g';
+import BasicSourceCache from './source_cache';
 
 export function preprocessStyle(style) {
     if (typeof style !== 'object') return;
@@ -27,7 +27,7 @@ export function preprocessStyle(style) {
 
 class BasicStyle extends Style {
     loadedPromise: Promise<void>;
-    sourceCaches: any = {};
+    sourceCaches: {[_: string]: any};
     constructor(style: any, map: any, options: StyleOptions = {}) {
         super(map, options);
         this.loadedPromise = new Promise((res) =>
@@ -50,7 +50,7 @@ class BasicStyle extends Style {
 
     // @ts-ignore
     _createSourceCache(id, source) {
-        return new SourceCache(id, source, this.dispatcher);
+        return new BasicSourceCache(id, source, this.dispatcher);
     }
     // setLayers, and all other methods on the super, e.g. setPaintProperty, should be called
     // via loadedPromise.then, not synchrounsouly
